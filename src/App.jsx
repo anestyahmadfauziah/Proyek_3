@@ -1,14 +1,13 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Splash from "./pages/Splash";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Notifikasi from "./pages/Notifikasi";
 import Profil from "./pages/Profil";
-import Stok from "./pages/Stok"; 
-import SiKecil from "./pages/SiKecil"; 
-import Nutrisi from "./pages/Nutrisi"; 
+import Stok from "./pages/Stok";
+import SiKecil from "./pages/SiKecil";
+import Nutrisi from "./pages/Nutrisi";
 
 function App() {
   return (
@@ -18,16 +17,14 @@ function App() {
         {/* Halaman utama */}
         <Route path="/" element={<Dashboard />} />
 
-        {/* Login */}
-        <Route path="/login" element={<Login />} />
-
-        {/* Register */}
-        <Route path="/register" element={<Register />} />
+        {/* Login & Register menjadi satu halaman */}
+        <Route path="/login" element={<Auth />} />
+        <Route path="/register" element={<Auth />} />
 
         {/* Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
 
-                {/* Stok Kulkas */}
+        {/* Stok Kulkas */}
         <Route path="/stok" element={<Stok />} />
 
         {/* Notifikasi */}
@@ -36,11 +33,13 @@ function App() {
         {/* Profil */}
         <Route path="/profil" element={<Profil />} />
 
+        {/* Nutrisi */}
         <Route path="/nutrisi" element={<Nutrisi />} />
 
+        {/* Si Kecil */}
         <Route path="/si-kecil" element={<SiKecil />} />
 
-        {/* Splash jika masih ingin digunakan */}
+        {/* Splash */}
         <Route path="/splash" element={<Splash />} />
 
       </Routes>

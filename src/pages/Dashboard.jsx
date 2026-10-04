@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import {
@@ -18,6 +18,7 @@ import {
 
 import logoDapurCerdas from "../assets/logo-dapur-cerdas.png";
 import TambahBahanModal from "./TambahBahanModal";
+import { cekBackend } from "../services/api";
 
 /* =========================================================
    DATA BAHAN
@@ -107,6 +108,27 @@ function Dashboard() {
   const location = useLocation();
 
   /* =======================================================
+     CEK KONEKSI KE BACKEND GOLANG
+  ======================================================= */
+
+  useEffect(() => {
+    const cekKoneksiBackend = async () => {
+      try {
+        const data = await cekBackend();
+
+        console.log("RESPON BACKEND GOLANG:", data);
+      } catch (error) {
+        console.error(
+          "GAGAL TERHUBUNG KE BACKEND GOLANG:",
+          error
+        );
+      }
+    };
+
+    cekKoneksiBackend();
+  }, []);
+
+  /* =======================================================
      TANGGAL HARI INI
   ======================================================= */
 
@@ -190,7 +212,6 @@ function Dashboard() {
               onClick={() => navigate("/")}
               className="flex shrink-0 items-center gap-2 sm:gap-2.5"
             >
-
               <img
                 src={logoDapurCerdas}
                 alt="Dapur Cerdas"
@@ -198,7 +219,6 @@ function Dashboard() {
               />
 
               <div className="hidden leading-none sm:block">
-
                 <h1 className="font-playfair text-base font-bold text-[#23652d] sm:text-lg">
                   Dapur Cerdas
                 </h1>
@@ -206,9 +226,7 @@ function Dashboard() {
                 <p className="mt-1 text-[10px] text-slate-400 sm:text-[11px]">
                   Asisten Dapur Cerdas
                 </p>
-
               </div>
-
             </button>
 
             {/* NAVIGASI */}
@@ -216,7 +234,6 @@ function Dashboard() {
             <nav className="hidden items-center gap-1 md:flex lg:gap-1.5">
 
               {menu.map((item) => {
-
                 const Icon = item.icon;
                 const active = isActive(item.path);
 
@@ -244,17 +261,14 @@ function Dashboard() {
                       }
                     `}
                   >
-
                     <Icon
                       size={17}
                       strokeWidth={active ? 2.5 : 2}
                     />
 
                     <span>{item.label}</span>
-
                   </button>
                 );
-
               })}
 
             </nav>
@@ -284,7 +298,6 @@ function Dashboard() {
                 "
                 aria-label="Notifikasi"
               >
-
                 <Bell size={19} />
 
                 <span
@@ -307,7 +320,6 @@ function Dashboard() {
                 >
                   2
                 </span>
-
               </button>
 
               {/* LOGIN */}
@@ -409,6 +421,8 @@ function Dashboard() {
           "
         >
 
+          {/* ORNAMEN */}
+
           <div
             className="
               pointer-events-none
@@ -424,20 +438,32 @@ function Dashboard() {
             "
           />
 
+          {/* HERO CONTENT */}
+
           <div
             className="
               relative
               z-10
               flex
               flex-col
-              gap-4
+              gap-5
               lg:flex-row
-              lg:items-end
-              lg:justify-between
+              lg:items-stretch
             "
           >
 
-            <div className="min-w-0">
+            {/* BAGIAN KIRI */}
+
+            <div
+              className="
+                flex
+                min-w-0
+                flex-1
+                flex-col
+                justify-center
+                lg:max-w-[43%]
+              "
+            >
 
               <h2
                 className="
@@ -449,7 +475,7 @@ function Dashboard() {
                   lg:text-3xl
                 "
               >
-                Halo, Bunda Test!
+                Halo! 👋
               </h2>
 
               <p
@@ -461,84 +487,100 @@ function Dashboard() {
                   sm:text-sm
                 "
               >
-                Mari penuhi gizi harian{" "}
-                <strong>husen (4 tahun)</strong> hari ini.
+                Yuk, pilih bahan pangan bergizi untuk mendukung tumbuh kembang{" "}
               </p>
 
+              {/* TANGGAL */}
+
+              <div
+                className="
+                  mt-3
+                  self-start
+                  rounded-full
+                  bg-white/15
+                  px-3
+                  py-1.5
+                  text-[10px]
+                  font-semibold
+                  backdrop-blur-sm
+                  sm:text-[11px]
+                "
+              >
+                {tanggalHariIni}
+              </div>
+
             </div>
+
+            {/* BAGIAN KANAN */}
 
             <div
               className="
-                self-start
-                rounded-full
-                bg-white/15
-                px-3
-                py-1.5
-                text-[10px]
-                font-semibold
-                backdrop-blur-sm
-                sm:text-[11px]
-                lg:self-end
+                grid
+                flex-1
+                grid-cols-1
+                gap-2.5
+                sm:grid-cols-3
+                lg:max-w-[57%]
               "
             >
-              {tanggalHariIni}
-            </div>
 
-          </div>
+              {/* TOTAL BAHAN */}
 
-          {/* STATISTIK */}
+              <div
+                className="
+                  rounded-xl
+                  bg-white/15
+                  p-3.5
+                  sm:p-4
+                "
+              >
+                <p className="text-2xl font-bold sm:text-3xl">
+                  {totalBahan}
+                </p>
 
-          <div
-            className="
-              relative
-              z-10
-              mt-5
-              grid
-              grid-cols-1
-              gap-2.5
-              sm:grid-cols-3
-            "
-          >
+                <p className="mt-0.5 text-[11px] font-medium text-white/85 sm:text-xs">
+                  Total Bahan
+                </p>
+              </div>
 
-            {/* TOTAL */}
+              {/* AMAN */}
 
-            <div className="rounded-xl bg-white/15 p-3.5 sm:p-4">
+              <div
+                className="
+                  rounded-xl
+                  bg-white
+                  p-3.5
+                  text-[#23652d]
+                  sm:p-4
+                "
+              >
+                <p className="text-2xl font-bold sm:text-3xl">
+                  {jumlahAman}
+                </p>
 
-              <p className="text-2xl font-bold sm:text-3xl">
-                {totalBahan}
-              </p>
+                <p className="mt-0.5 text-[11px] font-medium text-slate-600 sm:text-xs">
+                  Aman
+                </p>
+              </div>
 
-              <p className="mt-0.5 text-[11px] font-medium text-white/85 sm:text-xs">
-                Total Bahan
-              </p>
+              {/* PERLU DIOLAH */}
 
-            </div>
+              <div
+                className="
+                  rounded-xl
+                  bg-[#a3bd62]/80
+                  p-3.5
+                  sm:p-4
+                "
+              >
+                <p className="text-2xl font-bold text-[#f8d35b] sm:text-3xl">
+                  {jumlahPerluDiolah}
+                </p>
 
-            {/* AMAN */}
-
-            <div className="rounded-xl bg-white p-3.5 text-[#23652d] sm:p-4">
-
-              <p className="text-2xl font-bold sm:text-3xl">
-                {jumlahAman}
-              </p>
-
-              <p className="mt-0.5 text-[11px] font-medium text-slate-600 sm:text-xs">
-                Aman
-              </p>
-
-            </div>
-
-            {/* PERLU DIOLAH */}
-
-            <div className="rounded-xl bg-[#a3bd62]/80 p-3.5 sm:p-4">
-
-              <p className="text-2xl font-bold text-[#f8d35b] sm:text-3xl">
-                {jumlahPerluDiolah}
-              </p>
-
-              <p className="mt-0.5 text-[11px] font-medium text-white sm:text-xs">
-                Perlu Diolah
-              </p>
+                <p className="mt-0.5 text-[11px] font-medium text-white sm:text-xs">
+                  Perlu Diolah
+                </p>
+              </div>
 
             </div>
 
@@ -564,6 +606,8 @@ function Dashboard() {
             sm:p-5
           "
         >
+
+          {/* HEADER WARNING */}
 
           <div
             className="
@@ -629,20 +673,49 @@ function Dashboard() {
 
           {/* WARNING ITEMS */}
 
-          <div className="mt-4 space-y-3">
+          <div
+            className="
+              mt-4
+              grid
+              grid-cols-1
+              gap-3
+              sm:grid-cols-2
+              lg:grid-cols-3
+            "
+          >
 
             {bahan
               .filter(
                 (item) => item.status === "Perlu diolah"
               )
-              .slice(0, 2)
+              .slice(0, 3)
               .map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-3"
+                  className="
+                    flex
+                    min-w-0
+                    items-center
+                    justify-between
+                    gap-3
+                    rounded-xl
+                    bg-[#fafafa]
+                    px-2.5
+                    py-2
+                  "
                 >
 
-                  <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                  {/* FOTO + NAMA */}
+
+                  <div
+                    className="
+                      flex
+                      min-w-0
+                      items-center
+                      gap-2.5
+                      sm:gap-3
+                    "
+                  >
 
                     <img
                       src={item.image}
@@ -671,6 +744,8 @@ function Dashboard() {
                     </div>
 
                   </div>
+
+                  {/* JUMLAH */}
 
                   <span
                     className="
@@ -832,10 +907,6 @@ function Dashboard() {
               </h2>
 
             </div>
-
-            {/* =================================================
-                TOMBOL TAMBAH BAHAN
-            ================================================= */}
 
             <button
               type="button"
@@ -1044,7 +1115,6 @@ function Dashboard() {
 
               </button>
             );
-
           })}
 
           {/* AI BUTTON */}
@@ -1083,12 +1153,6 @@ function Dashboard() {
 
 /* =========================================================
    CARD BAHAN
-
-   URUTAN:
-   1. NAMA
-   2. FOTO
-   3. JUMLAH + TANGGAL
-   4. STATUS
 ========================================================= */
 
 function BahanCard({ item }) {

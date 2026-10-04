@@ -12,7 +12,6 @@ import {
   Check,
 } from "lucide-react";
 
-import logoDapurCerdas from "../assets/logo-dapur-cerdas.png";
 
 /* =========================================================
    GOOGLE LOGO
@@ -328,50 +327,6 @@ function Auth() {
         <div className="w-full max-w-[500px]">
 
           {/* =================================================
-              LOGO
-          ================================================= */}
-
-          <div className="mb-6 flex justify-center sm:mb-7">
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="
-                group
-                flex
-                items-center
-                gap-2.5
-              "
-            >
-              <img
-                src={logoDapurCerdas}
-                alt="Dapur Cerdas"
-                className="
-                  h-10
-                  w-10
-                  object-contain
-                  transition
-                  duration-200
-                  group-hover:scale-105
-                  sm:h-11
-                  sm:w-11
-                "
-              />
-
-              <span
-                className="
-                  font-playfair
-                  text-xl
-                  font-bold
-                  text-[#23652d]
-                  sm:text-[22px]
-                "
-              >
-                Dapur Cerdas
-              </span>
-            </button>
-          </div>
-
-          {/* =================================================
               CARD
           ================================================= */}
 
@@ -406,7 +361,7 @@ function Auth() {
                       sm:text-[27px]
                     "
                   >
-                    Selamat Datang, Bunda!
+                    Selamat Datang!
                   </h1>
 
                   <p
@@ -420,8 +375,7 @@ function Auth() {
                       sm:text-sm
                     "
                   >
-                    Masuk untuk mengelola nutrisi dan kebutuhan
-                    Si Kecil dengan lebih mudah.
+                    Masuk untuk mengelola kebutuhan nutrisi dan makanan dengan lebih mudah.
                   </p>
                 </div>
 
@@ -744,28 +698,7 @@ function Auth() {
 
             {mode === "register" && (
               <>
-                {/* BACK */}
-
-                <button
-                  type="button"
-                  onClick={() => changeMode("login")}
-                  className="
-                    mb-5
-                    flex
-                    items-center
-                    gap-1.5
-                    text-[12px]
-                    font-medium
-                    text-[#77837d]
-                    transition
-                    hover:text-[#23652d]
-                  "
-                >
-                  <ArrowLeft size={16} />
-
-                  Kembali ke Login
-                </button>
-
+                
                 {/* HEADING */}
 
                 <div className="mb-6 text-center">
@@ -778,7 +711,7 @@ function Auth() {
                       sm:text-[27px]
                     "
                   >
-                    Daftar Akun Bunda
+                    Yuk, Buat Akun!
                   </h1>
 
                   <p
@@ -792,8 +725,7 @@ function Auth() {
                       sm:text-sm
                     "
                   >
-                    Mulai perjalanan cerdas memenuhi kebutuhan
-                    nutrisi Si Kecil.
+                    Kelola kebutuhan sehari-hari dengan lebih cerdas
                   </p>
                 </div>
 
@@ -1243,7 +1175,7 @@ function Auth() {
               sm:text-[11px]
             "
           >
-            © 2026 Dapur Cerdas · Teman Bunda untuk Si Kecil
+            © 2026 Dapur Cerdas · Bijak Mengolah, Sehat Bertumbuh
           </p>
         </div>
       </main>

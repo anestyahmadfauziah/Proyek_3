@@ -9,6 +9,7 @@ import {
   Pencil,
   LockKeyhole,
   LogOut,
+  Camera,
   ChevronRight,
 } from "lucide-react";
 
@@ -54,11 +55,9 @@ function Profil() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -131,72 +130,78 @@ function Profil() {
       {/* =====================================================
           HEADER
       ===================================================== */}
+    <header className="bg-[#f1f5f1]">
+  <div
+    className="
+      mx-auto
+      flex
+      w-full
+      max-w-5xl
+      items-center
+      gap-3
+      px-4
+      py-4
+      sm:px-6
+      sm:py-5
+      lg:px-8
+    "
+  >
 
-      <header className="bg-[#f1f5f1]">
+    {/* Tombol kembali */}
+    <button
+      type="button"
+      onClick={() => navigate("/")}
+      className="
+        flex
+        h-9
+        w-9
+        shrink-0
+        items-center
+        justify-center
+        rounded-full
+        text-[#202833]
+        transition
+        hover:bg-white/70
+        sm:h-10
+        sm:w-10
+      "
+      aria-label="Kembali"
+    >
+      <ArrowLeft
+        size={23}
+        strokeWidth={2}
+        className="sm:h-6 sm:w-6"
+      />
+    </button>
 
-        <div
-          className="
-            mx-auto
-            flex
-            w-full
-            max-w-5xl
-            items-center
-            gap-3
-            px-4
-            py-4
-            sm:px-6
-            sm:py-5
-            lg:px-8
-          "
-        >
+    {/* Judul + Subjudul */}
+    <div>
+      <h1
+        className="
+          font-playfair
+          text-xl
+          font-bold
+          text-[#24642e]
+          sm:text-2xl
+        "
+      >
+        Profil Saya
+      </h1>
 
-          {/* Back */}
+      <p
+        className="
+          mt-0.5
+          text-xs
+          text-slate-500
+          sm:text-sm
+        "
+      >
+        Kelola informasi akun Anda dengan mudah.
+      </p>
+    </div>
 
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="
-              flex
-              h-9
-              w-9
-              shrink-0
-              items-center
-              justify-center
-              rounded-full
-              text-[#202833]
-              transition
-              hover:bg-white/70
-              sm:h-10
-              sm:w-10
-            "
-            aria-label="Kembali"
-          >
-            <ArrowLeft
-              size={23}
-              strokeWidth={2}
-              className="sm:h-6 sm:w-6"
-            />
-          </button>
-
-
-          {/* Title */}
-
-          <h1
-            className="
-              font-playfair
-              text-xl
-              font-bold
-              text-[#24642e]
-              sm:text-2xl
-            "
-          >
-            Profil Saya
-          </h1>
-
-        </div>
-
-      </header>
-
+  </div>
+</header>
 
       {/* =====================================================
           CONTENT
@@ -214,123 +219,340 @@ function Profil() {
         "
       >
 
-        {/* ===================================================
-            PROFILE SUMMARY
-        =================================================== */}
+       {/* ===================================================
+    PROFILE SUMMARY
+=================================================== */}
 
-        <section
+<section
+  className="
+    relative
+    mt-0
+    overflow-hidden
+    rounded-b-[20px]
+    border
+    border-[#d9efdc]
+    bg-[#f5fbf5]
+    px-5
+    py-5
+    shadow-sm
+    sm:rounded-[20px]
+    sm:px-7
+    sm:py-6
+  "
+>
+  {/* Background dekorasi sederhana */}
+  <div
+    className="
+      pointer-events-none
+      absolute
+      -right-16
+      -top-20
+      h-48
+      w-48
+      rounded-full
+      bg-[#e8f6e9]
+      opacity-70
+    "
+  />
+
+  <div
+    className="
+      pointer-events-none
+      absolute
+      -bottom-24
+      right-20
+      h-44
+      w-44
+      rounded-full
+      bg-[#edf8ee]
+      opacity-80
+    "
+  />
+
+  {/* Isi Profile */}
+
+  <div
+    className="
+      relative
+      flex
+      items-center
+      gap-4
+      sm:gap-6
+    "
+  >
+
+    {/* Avatar */}
+
+    <div className="relative shrink-0">
+
+      <div
+        className="
+          flex
+          h-[92px]
+          w-[92px]
+          items-center
+          justify-center
+          overflow-hidden
+          rounded-full
+          border-[4px]
+          border-white
+          bg-[#e5f3e7]
+          shadow-sm
+          sm:h-[112px]
+          sm:w-[112px]
+        "
+      >
+        <UserRound
+          size={55}
+          strokeWidth={1.5}
           className="
-            rounded-b-[22px]
-            bg-white
-            px-4
-            py-5
-            text-center
-            shadow-sm
-            sm:rounded-[22px]
-            sm:px-6
-            sm:py-6
+            text-[#3d9951]
+            sm:h-[68px]
+            sm:w-[68px]
           "
-        >
-
-          <h2
-            className="
-              break-words
-              text-lg
-              font-bold
-              sm:text-xl
-            "
-          >
-            {nama}
-          </h2>
+        />
+      </div>
 
 
-          <p
-            className="
-              mt-1
-              break-all
-              text-sm
-              text-slate-500
-            "
-          >
-            {email}
-          </p>
+      {/* Tombol Kamera */}
+
+      <button
+        type="button"
+        onClick={() => {
+          console.log("Ubah foto profil");
+        }}
+        className="
+          absolute
+          bottom-0
+          right-0
+          flex
+          h-8
+          w-8
+          items-center
+          justify-center
+          rounded-full
+          border-[3px]
+          border-white
+          bg-[#287341]
+          text-white
+          shadow-sm
+          transition
+          hover:bg-[#205e35]
+          sm:h-9
+          sm:w-9
+        "
+        aria-label="Ubah foto profil"
+      >
+        <Camera
+          size={15}
+          strokeWidth={2.2}
+        />
+      </button>
+
+    </div>
 
 
-          <div
-            className="
-              mt-3
-              inline-flex
-              rounded-full
-              bg-[#d9f8e3]
-              px-3
-              py-1.5
-              text-xs
-              font-bold
-              text-[#287341]
-            "
-          >
-            Akun Aktif
-          </div>
+    {/* Informasi Pengguna */}
 
-        </section>
+    <div className="min-w-0">
 
+      {/* Halo */}
+
+      <p
+        className="
+          text-sm
+          text-slate-500
+          sm:text-base
+        "
+      >
+        Halo,
+      </p>
+
+
+      {/* Nama */}
+
+      <h2
+        className="
+          mt-0.5
+          break-words
+          text-2xl
+          font-bold
+          leading-tight
+          text-[#202833]
+          sm:text-[28px]
+        "
+      >
+        {nama}
+      </h2>
+
+
+      {/* Badge Pengguna */}
+
+      <div
+        className="
+          mt-2
+          inline-flex
+          items-center
+          gap-1.5
+          rounded-full
+          bg-[#d9f8e3]
+          px-3
+          py-1.5
+          text-xs
+          font-bold
+          text-[#287341]
+          sm:text-sm
+        "
+      >
+        <UserRound
+          size={14}
+          strokeWidth={2.2}
+        />
+
+        Pengguna
+      </div>
+
+
+    </div>
+
+  </div>
+
+</section>
 
         {/* ===================================================
-            USER INFORMATION
-        =================================================== */}
+    INFORMASI AKUN
+=================================================== */}
 
-        <section className="mt-5 space-y-3">
+<section
+  className="
+    mt-5
+    rounded-[20px]
+    border
+    border-slate-100
+    bg-white
+    p-4
+    shadow-sm
+    sm:p-5
+  "
+>
+  {/* Header Informasi Akun */}
 
-          <ProfileInfo
-            icon={<UserRound size={19} />}
-            label="Nama"
-            value={nama}
-          />
+  <div className="mb-4 flex items-center gap-3">
+    <div
+      className="
+        flex
+        h-10
+        w-10
+        shrink-0
+        items-center
+        justify-center
+        rounded-full
+        bg-[#d9f8e3]
+        text-[#287341]
+      "
+    >
+      <UserRound
+        size={20}
+        strokeWidth={2}
+      />
+    </div>
+
+    <div>
+      <h2
+        className="
+          text-sm
+          font-bold
+          text-[#202833]
+          sm:text-base
+        "
+      >
+        Informasi Akun
+      </h2>
+
+      <p
+        className="
+          mt-0.5
+          text-[11px]
+          text-slate-400
+          sm:text-xs
+        "
+      >
+        Data diri Anda yang terdaftar di aplikasi.
+      </p>
+    </div>
+  </div>
 
 
-          <ProfileInfo
-            icon={<Mail size={19} />}
-            label="Email"
-            value={email}
-          />
+  {/* =================================================
+      DATA AKUN
+  ================================================= */}
+
+  <div
+    className="
+      grid
+      grid-cols-1
+      gap-3
+      md:grid-cols-2
+    "
+  >
+
+    {/* Nama */}
+
+    <ProfileInfo
+      icon={<UserRound size={18} />}
+      label="Nama"
+      value={nama}
+    />
 
 
-          <ProfileInfo
-            icon={<Badge size={19} />}
-            label="ID Pengguna"
-            value={idPengguna}
-          />
+    {/* Email */}
 
-        </section>
-
-
-        {/* ===================================================
-            PROFILE ACTIONS
-        =================================================== */}
-
-        <section className="mt-5 space-y-3">
-
-          <ProfileAction
-            icon={<Pencil size={19} />}
-            title="Ubah Profil"
-            description="Ubah nama tampilan"
-            onClick={() => {
-              console.log("Ubah profil");
-            }}
-          />
+    <ProfileInfo
+      icon={<Mail size={18} />}
+      label="Email"
+      value={email}
+    />
 
 
-          <ProfileAction
-            icon={<LockKeyhole size={19} />}
-            title="Ganti Kata Sandi"
-            description="Minimal 8 karakter"
-            onClick={() => {
-              console.log("Ganti kata sandi");
-            }}
-          />
+    {/* ID Pengguna */}
 
-        </section>
+    <ProfileInfo
+      icon={<Badge size={18} />}
+      label="ID Pengguna"
+      value={idPengguna}
+    />
 
+
+    {/* Ubah Profil */}
+
+    <ProfileAction
+      icon={<Pencil size={18} />}
+      title="Ubah Profil"
+      description="Ubah nama tampilan"
+      onClick={() => {
+        console.log("Ubah profil");
+      }}
+    />
+
+  </div>
+
+
+  {/* =================================================
+      GANTI KATA SANDI
+  ================================================= */}
+
+  <div className="mt-3">
+    <ProfileAction
+      icon={<LockKeyhole size={18} />}
+      title="Ganti Kata Sandi"
+      description="Minimal 8 karakter"
+      onClick={() => {
+        console.log("Ganti kata sandi");
+      }}
+    />
+  </div>
+
+</section>
 
         {/* ===================================================
             LOGOUT
@@ -385,7 +607,7 @@ function Profil() {
             sm:text-sm
           "
         >
-          Dapur Cerdas v1.0 • Cegah stunting sejak dapur
+          © 2026 Dapur Cerdas · Bijak Mengolah, Sehat Bertumbuh
         </p>
 
       </main>
@@ -404,18 +626,19 @@ function ProfileInfo({ icon, label, value }) {
     <div
       className="
         flex
-        min-h-[76px]
+        min-h-[70px]
         items-center
         gap-3
-        rounded-[18px]
+        rounded-[14px]
         border
         border-slate-100
-        bg-white
-        px-4
-        py-3
-        shadow-sm
-        sm:min-h-[82px]
-        sm:px-5
+        bg-[#f8fbf9]
+        px-3
+        py-2.5
+        transition
+        hover:bg-[#f3f9f4]
+        sm:min-h-[76px]
+        sm:px-4
       "
     >
 
@@ -424,16 +647,16 @@ function ProfileInfo({ icon, label, value }) {
       <div
         className="
           flex
-          h-10
-          w-10
+          h-9
+          w-9
           shrink-0
           items-center
           justify-center
-          rounded-[12px]
-          bg-[#f1f3f4]
-          text-slate-500
-          sm:h-11
-          sm:w-11
+          rounded-[11px]
+          bg-[#dff7e6]
+          text-[#287341]
+          sm:h-10
+          sm:w-10
         "
       >
         {icon}
@@ -442,13 +665,13 @@ function ProfileInfo({ icon, label, value }) {
 
       {/* Text */}
 
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
 
         <p
           className="
-            text-xs
+            text-[11px]
             text-slate-400
-            sm:text-sm
+            sm:text-xs
           "
         >
           {label}
@@ -460,8 +683,9 @@ function ProfileInfo({ icon, label, value }) {
             max-w-full
             truncate
             text-sm
-            font-medium
-            sm:text-base
+            font-semibold
+            text-[#202833]
+            sm:text-sm
           "
           title={value}
         >
@@ -469,6 +693,14 @@ function ProfileInfo({ icon, label, value }) {
         </p>
 
       </div>
+
+
+      {/* Arrow */}
+
+      <ChevronRight
+        size={17}
+        className="shrink-0 text-slate-400"
+      />
 
     </div>
   );
@@ -491,22 +723,21 @@ function ProfileAction({
       onClick={onClick}
       className="
         flex
-        min-h-[76px]
+        min-h-[70px]
         w-full
         items-center
         gap-3
-        rounded-[18px]
+        rounded-[14px]
         border
         border-slate-100
-        bg-white
-        px-4
-        py-3
+        bg-[#f8fbf9]
+        px-3
+        py-2.5
         text-left
-        shadow-sm
         transition
-        hover:bg-slate-50
-        sm:min-h-[82px]
-        sm:px-5
+        hover:bg-[#f3f9f4]
+        sm:min-h-[76px]
+        sm:px-4
       "
     >
 
@@ -515,14 +746,16 @@ function ProfileAction({
       <div
         className="
           flex
-          h-10
-          w-10
+          h-9
+          w-9
           shrink-0
           items-center
           justify-center
-          text-slate-600
-          sm:h-11
-          sm:w-11
+          rounded-[11px]
+          bg-[#fff1d9]
+          text-[#e79b28]
+          sm:h-10
+          sm:w-10
         "
       >
         {icon}
@@ -537,7 +770,7 @@ function ProfileAction({
           className="
             text-sm
             font-semibold
-            sm:text-base
+            text-[#202833]
           "
         >
           {title}
@@ -546,9 +779,10 @@ function ProfileAction({
         <p
           className="
             mt-0.5
-            text-xs
+            truncate
+            text-[11px]
             text-slate-400
-            sm:text-sm
+            sm:text-xs
           "
         >
           {description}
@@ -560,7 +794,7 @@ function ProfileAction({
       {/* Arrow */}
 
       <ChevronRight
-        size={19}
+        size={17}
         className="shrink-0 text-slate-400"
       />
 

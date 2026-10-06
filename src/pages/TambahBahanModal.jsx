@@ -1,794 +1,859 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  X,
+  ArrowLeft,
+  Search,
+  XCircle,
+  Check,
+  ChevronRight,
+  ChevronDown,
   CalendarDays,
-  Plus,
-  Minus,
+  Leaf,
+  Beef,
+  Wheat,
+  Milk,
 } from "lucide-react";
 
-function TambahBahanModal({ onClose, onSave }) {
-  const [form, setForm] = useState({
-    nama: "",
+// ======================================================
+// DATA BAHAN
+// ======================================================
+
+const bahanData = [
+  {
+    id: 1,
+    nama: "Kangkung",
     kategori: "Sayuran",
-    tanggalKadaluarsa: "",
-    jumlah: 1,
-    satuan: "pcs",
-    harga: "",
-    tanggalBeli: "",
-  });
+    deskripsi:
+      "Sayuran hijau yang kaya akan vitamin A, K, dan serat.",
+    image:
+      "https://images.unsplash.com/photo-1515367462048-0d2f1e8f5e3c?auto=format&fit=crop&w=300&q=80",
+    nutrisi: {
+      kalori: "19 kkal",
+      protein: "2.6 g",
+      lemak: "0.2 g",
+      karbohidrat: "3.1 g",
+      serat: "2.1 g",
+    },
+  },
+  {
+    id: 2,
+    nama: "Bayam",
+    kategori: "Sayuran",
+    deskripsi:
+      "Sayuran hijau yang kaya zat besi, vitamin, dan mineral.",
+    image:
+      "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=300&q=80",
+    nutrisi: {
+      kalori: "23 kkal",
+      protein: "2.9 g",
+      lemak: "0.4 g",
+      karbohidrat: "3.6 g",
+      serat: "2.2 g",
+    },
+  },
+  {
+    id: 3,
+    nama: "Sawi",
+    kategori: "Sayuran",
+    deskripsi:
+      "Sayuran hijau dengan kandungan vitamin dan mineral.",
+    image:
+      "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?auto=format&fit=crop&w=300&q=80",
+    nutrisi: {
+      kalori: "27 kkal",
+      protein: "2.9 g",
+      lemak: "0.4 g",
+      karbohidrat: "4.7 g",
+      serat: "2.0 g",
+    },
+  },
+  {
+    id: 4,
+    nama: "Wortel",
+    kategori: "Sayuran",
+    deskripsi:
+      "Sayuran berwarna oranye yang kaya vitamin A dan beta karoten.",
+    image:
+      "https://images.unsplash.com/photo-1447175008436-170170753d52?auto=format&fit=crop&w=300&q=80",
+    nutrisi: {
+      kalori: "41 kkal",
+      protein: "0.9 g",
+      lemak: "0.2 g",
+      karbohidrat: "9.6 g",
+      serat: "2.8 g",
+    },
+  },
+  {
+    id: 5,
+    nama: "Brokoli",
+    kategori: "Sayuran",
+    deskripsi:
+      "Sayuran hijau yang kaya vitamin C, K, folat, dan serat.",
+    image:
+      "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?auto=format&fit=crop&w=300&q=80",
+    nutrisi: {
+      kalori: "34 kkal",
+      protein: "2.8 g",
+      lemak: "0.4 g",
+      karbohidrat: "6.6 g",
+      serat: "2.6 g",
+    },
+  },
+  {
+    id: 6,
+    nama: "Kol",
+    kategori: "Sayuran",
+    deskripsi:
+      "Sayuran yang mengandung vitamin C, K, dan serat.",
+    image:
+      "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?auto=format&fit=crop&w=300&q=80",
+    nutrisi: {
+      kalori: "25 kkal",
+      protein: "1.3 g",
+      lemak: "0.1 g",
+      karbohidrat: "5.8 g",
+      serat: "2.5 g",
+    },
+  },
+  {
+    id: 7,
+    nama: "Ikan Tuna",
+    kategori: "Protein",
+    deskripsi:
+      "Sumber protein hewani yang kaya omega-3 dan vitamin B.",
+    image:
+      "https://images.unsplash.com/photo-1544943910-4c1dc44aab44?auto=format&fit=crop&w=300&q=80",
+    nutrisi: {
+      kalori: "132 kkal",
+      protein: "28 g",
+      lemak: "1.3 g",
+      karbohidrat: "0 g",
+      serat: "0 g",
+    },
+  },
+  {
+    id: 8,
+    nama: "Telur Ayam",
+    kategori: "Protein",
+    deskripsi:
+      "Sumber protein lengkap dengan berbagai vitamin dan mineral.",
+    image:
+      "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=300&q=80",
+    nutrisi: {
+      kalori: "143 kkal",
+      protein: "12.6 g",
+      lemak: "9.5 g",
+      karbohidrat: "0.7 g",
+      serat: "0 g",
+    },
+  },
+  {
+    id: 9,
+    nama: "Apel",
+    kategori: "Buah-buahan",
+    deskripsi:
+      "Buah yang kaya serat, vitamin C, dan antioksidan.",
+    image:
+      "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=300&q=80",
+    nutrisi: {
+      kalori: "52 kkal",
+      protein: "0.3 g",
+      lemak: "0.2 g",
+      karbohidrat: "13.8 g",
+      serat: "2.4 g",
+    },
+  },
+];
 
-  const kategori = [
-    { label: "Sayuran", icon: "🥬" },
-    { label: "Buah-buahan", icon: "🍎" },
-    { label: "Daging & Ikan", icon: "🥩" },
-    { label: "Susu & Telur", icon: "🥚" },
-    { label: "Karbohidrat", icon: "🍚" },
-    { label: "Bumbu & Saus", icon: "🧄" },
-    { label: "Siap Saji", icon: "🍱" },
-    { label: "Lainnya", icon: "📦" },
-  ];
+// ======================================================
+// KATEGORI
+// ======================================================
 
-  const satuan = [
-    "pcs",
-    "gram",
-    "kg",
-    "ml",
-    "liter",
-    "butir",
-    "bungkus",
-    "ikat",
-  ];
+const kategoriData = [
+  {
+    nama: "Semua",
+    icon: Leaf,
+  },
+  {
+    nama: "Sayuran",
+    icon: Leaf,
+  },
+  {
+    nama: "Buah-buahan",
+    icon: null,
+  },
+  {
+    nama: "Protein",
+    icon: Beef,
+  },
+];
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+// ======================================================
+// KOMPONEN UTAMA
+// ======================================================
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+export default function TambahBahanModal() {
+  const navigate = useNavigate();
+
+  const [step, setStep] = useState(1);
+
+  const [search, setSearch] = useState("");
+
+  const [kategoriAktif, setKategoriAktif] = useState("Semua");
+
+  const [bahanTerpilih, setBahanTerpilih] = useState(null);
+
+  const [jumlah, setJumlah] = useState("500");
+
+  const [satuan, setSatuan] = useState("gram");
+
+  const [tanggalMasuk, setTanggalMasuk] = useState("06/10/2026");
+
+  const [tanggalKadaluarsa, setTanggalKadaluarsa] =
+    useState("10/10/2026");
+
+  // ====================================================
+  // FILTER BAHAN
+  // ====================================================
+
+  const bahanFiltered = useMemo(() => {
+    return bahanData.filter((item) => {
+      const cocokSearch = item.nama
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+      const cocokKategori =
+        kategoriAktif === "Semua" ||
+        item.kategori === kategoriAktif;
+
+      return cocokSearch && cocokKategori;
+    });
+  }, [search, kategoriAktif]);
+
+  // ====================================================
+  // PILIH BAHAN
+  // ====================================================
+
+  const pilihBahan = (item) => {
+    setBahanTerpilih(item);
   };
 
-  const handleJumlah = (value) => {
-    setForm((prev) => ({
-      ...prev,
-      jumlah: Math.max(1, Number(prev.jumlah) + value),
-    }));
+  // ====================================================
+  // LANJUT KE DETAIL
+  // ====================================================
+
+  const handleLanjut = () => {
+    if (!bahanTerpilih) return;
+
+    setStep(2);
   };
 
-  const handleSubmit = (e) => {
+  // ====================================================
+  // SIMPAN
+  // ====================================================
+
+  const handleSimpan = (e) => {
     e.preventDefault();
 
-    if (
-      !form.nama ||
-      !form.tanggalKadaluarsa ||
-      !form.jumlah ||
-      !form.satuan
-    ) {
-      alert("Mohon lengkapi data bahan terlebih dahulu.");
+    if (!bahanTerpilih) return;
+
+    const dataBahan = {
+      id: Date.now(),
+      nama: bahanTerpilih.nama,
+      kategori: bahanTerpilih.kategori,
+      jumlah,
+      satuan,
+      tanggalMasuk,
+      tanggalKadaluarsa,
+    };
+
+    console.log("Data bahan:", dataBahan);
+
+    navigate("/stok");
+  };
+
+  // ====================================================
+  // KEMBALI
+  // ====================================================
+
+  const handleBack = () => {
+    if (step === 2) {
+      setStep(1);
       return;
     }
 
-    const today = new Date();
-    const expiredDate = new Date(form.tanggalKadaluarsa);
-
-    const selisihHari = Math.ceil(
-      (expiredDate - today) / (1000 * 60 * 60 * 24)
-    );
-
-    const status = selisihHari <= 3 ? "Perlu diolah" : "Aman";
-
-    const bahanBaru = {
-      nama: form.nama,
-      jumlah: `${form.jumlah} ${form.satuan}`,
-      tanggal: new Date(form.tanggalKadaluarsa).toLocaleDateString(
-        "id-ID",
-        {
-          day: "2-digit",
-          month: "2-digit",
-        }
-      ),
-      kategori: form.kategori,
-      harga: form.harga,
-      tanggalBeli: form.tanggalBeli,
-      status,
-      image:
-        "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80",
-    };
-
-    if (onSave) {
-      onSave(bahanBaru);
-    }
-
-    onClose();
+    navigate(-1);
   };
 
+  // ====================================================
+  // RENDER
+  // ====================================================
+
   return (
-    <div
-      className="
-        fixed
-        inset-0
-        z-[100]
-        flex
-        items-center
-        justify-center
-        bg-black/35
-        px-3
-        py-4
-        backdrop-blur-[2px]
-        sm:px-5
-      "
-    >
-      <div
-        className="
-          relative
-          flex
-          max-h-[94vh]
-          w-full
-          max-w-[720px]
-          flex-col
-          overflow-hidden
-          rounded-[22px]
-          bg-white
-          shadow-[0_20px_60px_rgba(0,0,0,0.15)]
-        "
-      >
-
-        {/* =================================================
+    <div className="min-h-screen bg-[#f5f9f5] font-jakarta text-[#24313d]">
+      {/* CONTAINER DIBUAT LEBIH KECIL */}
+      <div className="mx-auto min-h-screen w-full max-w-[460px] bg-[#f5f9f5]">
+        {/* ==================================================
             HEADER
-        ================================================= */}
+        ================================================== */}
 
-        <div
-          className="
-            flex
-            shrink-0
-            items-start
-            justify-between
-            border-b
-            border-slate-100
-            px-5
-            py-4
-            sm:px-6
-            sm:py-5
-          "
-        >
-          <div>
-            <h2
-              className="
-                text-lg
-                font-bold
-                text-[#202833]
-                sm:text-xl
-              "
-            >
-              Tambah Bahan Baru
-            </h2>
-
-            <p
-              className="
-                mt-0.5
-                text-xs
-                text-slate-500
-                sm:text-sm
-              "
-            >
-              Catat bahan agar stok kulkas lebih mudah dipantau.
-            </p>
-          </div>
-
+        <header className="sticky top-0 z-30 flex h-[58px] items-center gap-2.5 border-b border-[#e6eee8] bg-[#f5f9f5]/95 px-3.5 backdrop-blur sm:h-[62px] sm:px-4">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleBack}
             className="
-              flex
-              h-9
-              w-9
-              shrink-0
-              items-center
-              justify-center
-              rounded-full
-              text-slate-400
-              transition
-              hover:bg-slate-100
-              hover:text-slate-600
+              flex h-8 w-8 shrink-0 items-center
+              justify-center rounded-full
+              text-[#263746]
+              transition hover:bg-white
+              sm:h-9 sm:w-9
             "
-            aria-label="Tutup"
+            aria-label="Kembali"
           >
-            <X size={21} />
-          </button>
-        </div>
-
-        {/* =================================================
-            FORM
-        ================================================= */}
-
-        <form
-          onSubmit={handleSubmit}
-          className="
-            overflow-y-auto
-            px-5
-            py-5
-            sm:px-6
-            sm:py-6
-          "
-        >
-
-          {/* NAMA BAHAN */}
-
-          <div>
-            <label
-              htmlFor="nama"
-              className="
-                mb-1.5
-                block
-                text-xs
-                font-semibold
-                text-[#34414c]
-                sm:text-sm
-              "
-            >
-              Nama Bahan <span className="text-red-500">*</span>
-            </label>
-
-            <input
-              id="nama"
-              name="nama"
-              type="text"
-              value={form.nama}
-              onChange={handleChange}
-              placeholder="Contoh: Bayam Segar, Tempe, Telur Ayam..."
-              className="
-                h-11
-                w-full
-                rounded-xl
-                border
-                border-slate-200
-                bg-white
-                px-3.5
-                text-sm
-                text-[#202833]
-                outline-none
-                transition
-                placeholder:text-slate-400
-                focus:border-[#18a86b]
-                focus:ring-2
-                focus:ring-[#18a86b]/10
-                sm:h-12
-              "
+            <ArrowLeft
+              size={19}
+              strokeWidth={2}
             />
-          </div>
+          </button>
 
-          {/* KATEGORI */}
+          <h1 className="text-xl font-bold text-[#24313d] sm:text-2xl">
+            Tambah Bahan
+          </h1>
+        </header>
 
-          <div className="mt-5">
+        {/* ==================================================
+            STEP 1 - PILIH BAHAN
+        ================================================== */}
 
-            <label
-              className="
-                mb-2
-                block
-                text-xs
-                font-semibold
-                text-[#34414c]
-                sm:text-sm
-              "
-            >
-              Kategori <span className="text-red-500">*</span>
-            </label>
+        {step === 1 && (
+          <main className="px-3.5 pb-7 pt-3 sm:px-4 sm:pt-3.5">
+            {/* SEARCH */}
 
-            <div
-              className="
-                grid
-                grid-cols-2
-                gap-2
-                sm:grid-cols-4
-              "
-            >
-              {kategori.map((item) => {
-                const active = form.kategori === item.label;
+            <div className="relative">
+              <Search
+                size={17}
+                className="
+                  absolute left-3 top-1/2
+                  -translate-y-1/2
+                  text-[#7890a3]
+                "
+              />
+
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari bahan..."
+                className="
+                  h-10 w-full
+                  rounded-[11px]
+                  border border-[#dce6eb]
+                  bg-white
+                  pl-9 pr-9
+                  text-sm
+                  text-[#24313d]
+                  outline-none
+                  transition
+                  placeholder:text-[#7890a3]
+                  focus:border-[#159b68]
+                  focus:ring-2
+                  focus:ring-[#159b68]/10
+                "
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="
+                    absolute right-2.5 top-1/2
+                    -translate-y-1/2
+                    text-[#6f8291]
+                  "
+                >
+                  <XCircle size={16} />
+                </button>
+              )}
+            </div>
+
+            {/* KATEGORI */}
+
+            <div className="scrollbar-none mt-2.5 flex gap-1.5 overflow-x-auto pb-0.5">
+              {kategoriData.map((item) => {
+                const aktif = kategoriAktif === item.nama;
 
                 return (
                   <button
-                    key={item.label}
+                    key={item.nama}
                     type="button"
-                    onClick={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        kategori: item.label,
-                      }))
-                    }
+                    onClick={() => setKategoriAktif(item.nama)}
                     className={`
-                      flex
-                      min-h-[64px]
-                      flex-col
-                      items-center
-                      justify-center
-                      gap-1
-                      rounded-xl
-                      border
-                      px-2
-                      py-2
-                      text-[11px]
-                      font-medium
+                      shrink-0
+                      rounded-full
+                      px-3
+                      py-1.5
+                      text-xs
+                      font-semibold
                       transition
-                      sm:min-h-[70px]
-                      sm:text-xs
                       ${
-                        active
-                          ? "border-[#18b77a] bg-[#edfff7] text-[#176b48] ring-2 ring-[#18b77a]/20"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-[#b9dfcc] hover:bg-[#f7fcf9]"
+                        aktif
+                          ? "bg-[#169b68] text-white shadow-sm"
+                          : "bg-white text-[#758798] hover:bg-[#edf7f1]"
                       }
                     `}
                   >
-                    <span className="text-xl">
-                      {item.icon}
-                    </span>
-
-                    <span>{item.label}</span>
+                    {item.nama}
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          {/* TANGGAL + JUMLAH */}
+            {/* ==================================================
+                LIST BAHAN
+            ================================================== */}
 
-          <div
-            className="
-              mt-5
-              grid
-              grid-cols-1
-              gap-4
-              sm:grid-cols-2
-            "
-          >
+            <div className="mt-2.5 overflow-hidden rounded-[15px] border border-[#e3ebef] bg-white shadow-[0_1px_5px_rgba(30,50,40,0.03)]">
+              {bahanFiltered.length > 0 ? (
+                bahanFiltered.map((item, index) => {
+                  const aktif =
+                    bahanTerpilih?.id === item.id;
 
-            {/* TANGGAL KADALUWARSA */}
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => pilihBahan(item)}
+                      className={`
+                        flex w-full items-center
+                        gap-2.5
+                        px-2.5
+                        py-2
+                        text-left
+                        transition
+                        sm:px-3
+                        ${
+                          index !==
+                          bahanFiltered.length - 1
+                            ? "border-b border-[#edf1f3]"
+                            : ""
+                        }
+                        ${
+                          aktif
+                            ? "bg-[#effaf5]"
+                            : "bg-white hover:bg-[#fafcfb]"
+                        }
+                      `}
+                    >
+                      {/* GAMBAR LEBIH KECIL */}
 
-            <div>
-              <label
-                htmlFor="tanggalKadaluarsa"
-                className="
-                  mb-1.5
-                  block
-                  text-xs
-                  font-semibold
-                  text-[#34414c]
-                  sm:text-sm
-                "
-              >
-                Tanggal Kedaluwarsa
-                <span className="text-red-500"> *</span>
-              </label>
+                      <img
+                        src={item.image}
+                        alt={item.nama}
+                        className="
+                          h-10 w-10
+                          shrink-0
+                          rounded-[10px]
+                          object-cover
+                          sm:h-11 sm:w-11
+                        "
+                      />
 
-              <div className="relative">
-                <input
-                  id="tanggalKadaluarsa"
-                  name="tanggalKadaluarsa"
-                  type="date"
-                  value={form.tanggalKadaluarsa}
-                  onChange={handleChange}
-                  className="
-                    h-11
-                    w-full
-                    rounded-xl
-                    border
-                    border-slate-200
-                    bg-white
-                    px-3.5
-                    text-sm
-                    text-[#202833]
-                    outline-none
-                    transition
-                    focus:border-[#18a86b]
-                    focus:ring-2
-                    focus:ring-[#18a86b]/10
-                    sm:h-12
-                  "
-                />
+                      {/* INFO */}
 
-                <CalendarDays
-                  size={17}
-                  className="
-                    pointer-events-none
-                    absolute
-                    right-3.5
-                    top-1/2
-                    -translate-y-1/2
-                    text-slate-500
-                  "
-                />
-              </div>
-            </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold leading-tight text-[#273746] sm:text-base">
+                          {item.nama}
+                        </p>
 
-            {/* JUMLAH */}
+                        <p className="mt-0.5 text-xs leading-tight text-[#8293a0] sm:text-sm">
+                          {item.kategori}
+                        </p>
+                      </div>
 
-            <div>
-              <label
-                className="
-                  mb-1.5
-                  block
-                  text-xs
-                  font-semibold
-                  text-[#34414c]
-                  sm:text-sm
-                "
-              >
-                Jumlah <span className="text-red-500">*</span>
-              </label>
+                      {/* ICON */}
 
-              <div className="flex gap-2">
+                      {aktif ? (
+                        <span className="
+                          flex h-5 w-5
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-[#169b68]
+                          text-white
+                        ">
+                          <Check
+                            size={12}
+                            strokeWidth={3}
+                          />
+                        </span>
+                      ) : (
+                        <ChevronRight
+                          size={17}
+                          className="shrink-0 text-[#8b9cab]"
+                        />
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-sm font-semibold text-[#607382]">
+                    Bahan tidak ditemukan
+                  </p>
 
-                <div
-                  className="
-                    flex
-                    h-11
-                    flex-1
-                    items-center
-                    justify-between
-                    rounded-xl
-                    border
-                    border-slate-200
-                    px-2
-                    sm:h-12
-                  "
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleJumlah(-1)}
-                    className="
-                      flex
-                      h-8
-                      w-8
-                      items-center
-                      justify-center
-                      rounded-lg
-                      bg-slate-100
-                      text-slate-600
-                      hover:bg-slate-200
-                    "
-                  >
-                    <Minus size={15} />
-                  </button>
-
-                  <input
-                    name="jumlah"
-                    type="number"
-                    min="1"
-                    value={form.jumlah}
-                    onChange={handleChange}
-                    className="
-                      w-16
-                      border-0
-                      text-center
-                      text-sm
-                      font-semibold
-                      outline-none
-                    "
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => handleJumlah(1)}
-                    className="
-                      flex
-                      h-8
-                      w-8
-                      items-center
-                      justify-center
-                      rounded-lg
-                      bg-slate-100
-                      text-slate-600
-                      hover:bg-slate-200
-                    "
-                  >
-                    <Plus size={15} />
-                  </button>
+                  <p className="mt-1 text-xs text-[#95a3ae]">
+                    Coba gunakan kata pencarian lain.
+                  </p>
                 </div>
-
-                <select
-                  name="satuan"
-                  value={form.satuan}
-                  onChange={handleChange}
-                  className="
-                    h-11
-                    w-[125px]
-                    rounded-xl
-                    border
-                    border-slate-200
-                    bg-white
-                    px-3
-                    text-sm
-                    text-[#202833]
-                    outline-none
-                    focus:border-[#18a86b]
-                    sm:h-12
-                  "
-                >
-                  {satuan.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-
-              </div>
+              )}
             </div>
 
-          </div>
-
-          {/* HARGA + TANGGAL BELI */}
-
-          <div
-            className="
-              mt-4
-              grid
-              grid-cols-1
-              gap-4
-              sm:grid-cols-2
-            "
-          >
-
-            {/* HARGA */}
-
-            <div>
-              <label
-                htmlFor="harga"
-                className="
-                  mb-1.5
-                  block
-                  text-xs
-                  font-semibold
-                  text-[#34414c]
-                  sm:text-sm
-                "
-              >
-                Perkiraan Harga
-              </label>
-
-              <input
-                id="harga"
-                name="harga"
-                type="number"
-                value={form.harga}
-                onChange={handleChange}
-                placeholder="Contoh: 7000"
-                className="
-                  h-11
-                  w-full
-                  rounded-xl
-                  border
-                  border-slate-200
-                  bg-white
-                  px-3.5
-                  text-sm
-                  outline-none
-                  focus:border-[#18a86b]
-                  focus:ring-2
-                  focus:ring-[#18a86b]/10
-                  sm:h-12
-                "
-              />
-
-              <p className="mt-1.5 text-[10px] text-slate-400">
-                Digunakan untuk menghitung total pengeluaran bahan.
-              </p>
-            </div>
-
-            {/* TANGGAL BELI */}
-
-            <div>
-              <label
-                htmlFor="tanggalBeli"
-                className="
-                  mb-1.5
-                  block
-                  text-xs
-                  font-semibold
-                  text-[#34414c]
-                  sm:text-sm
-                "
-              >
-                Tanggal Beli
-              </label>
-
-              <div className="relative">
-
-                <input
-                  id="tanggalBeli"
-                  name="tanggalBeli"
-                  type="date"
-                  value={form.tanggalBeli}
-                  onChange={handleChange}
-                  className="
-                    h-11
-                    w-full
-                    rounded-xl
-                    border
-                    border-slate-200
-                    bg-white
-                    px-3.5
-                    text-sm
-                    outline-none
-                    focus:border-[#18a86b]
-                    focus:ring-2
-                    focus:ring-[#18a86b]/10
-                    sm:h-12
-                  "
-                />
-
-                <CalendarDays
-                  size={17}
-                  className="
-                    pointer-events-none
-                    absolute
-                    right-3.5
-                    top-1/2
-                    -translate-y-1/2
-                    text-slate-500
-                  "
-                />
-
-              </div>
-            </div>
-
-          </div>
-
-          {/* PREVIEW CARD */}
-
-          <div className="mt-5">
-
-            <p
-              className="
-                mb-2
-                text-xs
-                font-semibold
-                text-[#34414c]
-              "
-            >
-              Preview di Dashboard
-            </p>
-
-            <div
-              className="
-                flex
-                items-center
-                gap-3
-                rounded-xl
-                border
-                border-[#e4eee6]
-                bg-[#f9fcf9]
-                p-3
-              "
-            >
-              <div
-                className="
-                  flex
-                  h-12
-                  w-12
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-xl
-                  bg-[#e5f4e8]
-                  text-xl
-                "
-              >
-                {kategori.find(
-                  (item) => item.label === form.kategori
-                )?.icon || "📦"}
-              </div>
-
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-[#202833]">
-                  {form.nama || "Nama Bahan"}
-                </p>
-
-                <p className="mt-0.5 text-[11px] text-slate-500">
-                  {form.jumlah || 0} {form.satuan}
-                  {form.tanggalKadaluarsa && (
-                    <>
-                      <span className="mx-1">•</span>
-                      {new Date(
-                        form.tanggalKadaluarsa
-                      ).toLocaleDateString("id-ID", {
-                        day: "2-digit",
-                        month: "2-digit",
-                      })}
-                    </>
-                  )}
-                </p>
-
-                <p className="mt-1 text-[11px] font-semibold text-slate-600">
-                  {form.tanggalKadaluarsa
-                    ? (() => {
-                        const today = new Date();
-                        const exp = new Date(
-                          form.tanggalKadaluarsa
-                        );
-
-                        const days = Math.ceil(
-                          (exp - today) /
-                            (1000 * 60 * 60 * 24)
-                        );
-
-                        return days <= 3
-                          ? "Perlu diolah"
-                          : "Aman";
-                      })()
-                    : "Status bahan"}
-                </p>
-              </div>
-            </div>
-
-          </div>
-
-          {/* FOOTER */}
-
-          <div
-            className="
-              mt-5
-              flex
-              flex-col-reverse
-              gap-2
-              border-t
-              border-slate-100
-              pt-4
-              sm:flex-row
-              sm:justify-end
-            "
-          >
+            {/* ==================================================
+                LANJUT
+            ================================================== */}
 
             <button
               type="button"
-              onClick={onClose}
-              className="
+              onClick={handleLanjut}
+              disabled={!bahanTerpilih}
+              className={`
+                mt-3
                 h-10
-                rounded-xl
-                border
-                border-slate-200
-                px-5
-                text-xs
-                font-semibold
-                text-slate-600
-                transition
-                hover:bg-slate-50
-                sm:h-11
-                sm:text-sm
-              "
-            >
-              Batal
-            </button>
-
-            <button
-              type="submit"
-              className="
-                flex
-                h-10
-                items-center
-                justify-center
-                gap-1.5
-                rounded-xl
-                bg-[#1d6b27]
-                px-5
+                w-full
+                rounded-[11px]
                 text-xs
                 font-bold
-                text-white
-                shadow-sm
                 transition
-                hover:bg-[#155a1f]
-                sm:h-11
                 sm:text-sm
-              "
+                ${
+                  bahanTerpilih
+                    ? "bg-[#159b68] text-white shadow-sm hover:bg-[#11895b]"
+                    : "cursor-not-allowed bg-[#cfe4da] text-white"
+                }
+              `}
             >
-              <Plus size={17} />
-              Simpan Bahan
+              Lanjut
             </button>
+          </main>
+        )}
 
-          </div>
+        {/* ==================================================
+            STEP 2 - DETAIL BAHAN
+        ================================================== */}
 
-        </form>
+        {step === 2 && bahanTerpilih && (
+          <main className="px-3.5 pb-7 pt-3 sm:px-4 sm:pt-3.5">
+            {/* ==================================================
+                INFORMASI BAHAN
+            ================================================== */}
+
+            <section className="flex items-start gap-2.5">
+              <img
+                src={bahanTerpilih.image}
+                alt={bahanTerpilih.nama}
+                className="
+                  h-[68px]
+                  w-[86px]
+                  shrink-0
+                  rounded-xl
+                  object-cover
+                  sm:h-[74px]
+                  sm:w-[94px]
+                "
+              />
+
+              <div className="min-w-0 pt-0.5">
+                <h2 className="text-base font-bold leading-tight text-[#273746] sm:text-lg">
+                  {bahanTerpilih.nama}
+                </h2>
+
+                <p className="mt-0.5 text-xs text-[#169b68] sm:text-sm">
+                  {bahanTerpilih.kategori}
+                </p>
+
+                <p className="mt-1 text-[11px] leading-snug text-[#758694] sm:text-xs">
+                  {bahanTerpilih.deskripsi}
+                </p>
+              </div>
+            </section>
+
+            {/* ==================================================
+                INFORMASI NUTRISI
+            ================================================== */}
+
+            <section className="mt-3.5 rounded-[14px] bg-[#eef9f4] p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-[#315264] sm:text-base">
+                  Informasi Nutrisi (per 100g)
+                </h3>
+
+                <ChevronRight
+                  size={17}
+                  className="text-[#169b68]"
+                />
+              </div>
+
+              <div className="mt-2.5 grid grid-cols-5 gap-0.5">
+                <NutrisiItem
+                  icon={<Leaf size={14} />}
+                  label="Kalori"
+                  value={bahanTerpilih.nutrisi.kalori}
+                />
+
+                <NutrisiItem
+                  icon={<Beef size={14} />}
+                  label="Protein"
+                  value={bahanTerpilih.nutrisi.protein}
+                />
+
+                <NutrisiItem
+                  icon={<Milk size={14} />}
+                  label="Lemak"
+                  value={bahanTerpilih.nutrisi.lemak}
+                />
+
+                <NutrisiItem
+                  icon={<Wheat size={14} />}
+                  label="Karbohidrat"
+                  value={
+                    bahanTerpilih.nutrisi.karbohidrat
+                  }
+                />
+
+                <NutrisiItem
+                  icon={<Leaf size={14} />}
+                  label="Serat"
+                  value={bahanTerpilih.nutrisi.serat}
+                />
+              </div>
+            </section>
+
+            {/* ==================================================
+                FORM
+            ================================================== */}
+
+            <form
+              onSubmit={handleSimpan}
+              className="mt-4"
+            >
+              {/* JUMLAH */}
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
+                  Jumlah
+                </label>
+
+                <div className="flex gap-1.5">
+                  <input
+                    type="number"
+                    min="1"
+                    value={jumlah}
+                    onChange={(e) =>
+                      setJumlah(e.target.value)
+                    }
+                    className="
+                      h-10
+                      min-w-0
+                      flex-1
+                      rounded-[10px]
+                      border border-[#dce6eb]
+                      bg-white
+                      px-3
+                      text-sm
+                      text-[#24313d]
+                      outline-none
+                      focus:border-[#159b68]
+                      focus:ring-2
+                      focus:ring-[#159b68]/10
+                    "
+                    required
+                  />
+
+                  <div className="relative w-[105px] shrink-0 sm:w-[115px]">
+                    <select
+                      value={satuan}
+                      onChange={(e) =>
+                        setSatuan(e.target.value)
+                      }
+                      className="
+                        h-10
+                        w-full
+                        appearance-none
+                        rounded-[10px]
+                        border border-[#dce6eb]
+                        bg-white
+                        px-3
+                        pr-8
+                        text-sm
+                        text-[#24313d]
+                        outline-none
+                        focus:border-[#159b68]
+                        focus:ring-2
+                        focus:ring-[#159b68]/10
+                      "
+                    >
+                      <option value="gram">gram</option>
+                      <option value="kg">kg</option>
+                      <option value="ml">ml</option>
+                      <option value="liter">liter</option>
+                      <option value="butir">butir</option>
+                      <option value="pcs">pcs</option>
+                    </select>
+
+                    <ChevronDown
+                      size={15}
+                      className="
+                        pointer-events-none
+                        absolute right-2.5
+                        top-1/2
+                        -translate-y-1/2
+                        text-[#758694]
+                      "
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* TANGGAL MASUK */}
+
+              <div className="mt-3">
+                <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
+                  Tanggal Masuk
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tanggalMasuk}
+                    onChange={(e) =>
+                      setTanggalMasuk(e.target.value)
+                    }
+                    placeholder="DD/MM/YYYY"
+                    className="
+                      h-10
+                      w-full
+                      rounded-[10px]
+                      border border-[#dce6eb]
+                      bg-white
+                      px-3
+                      pr-10
+                      text-sm
+                      text-[#24313d]
+                      outline-none
+                      focus:border-[#159b68]
+                      focus:ring-2
+                      focus:ring-[#159b68]/10
+                    "
+                    required
+                  />
+
+                  <CalendarDays
+                    size={16}
+                    className="
+                      pointer-events-none
+                      absolute right-3
+                      top-1/2
+                      -translate-y-1/2
+                      text-[#64798a]
+                    "
+                  />
+                </div>
+              </div>
+
+              {/* TANGGAL KADALUARSA */}
+
+              <div className="mt-3">
+                <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
+                  Tanggal Kedaluwarsa
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tanggalKadaluarsa}
+                    onChange={(e) =>
+                      setTanggalKadaluarsa(e.target.value)
+                    }
+                    placeholder="DD/MM/YYYY"
+                    className="
+                      h-10
+                      w-full
+                      rounded-[10px]
+                      border border-[#dce6eb]
+                      bg-white
+                      px-3
+                      pr-10
+                      text-sm
+                      text-[#24313d]
+                      outline-none
+                      focus:border-[#159b68]
+                      focus:ring-2
+                      focus:ring-[#159b68]/10
+                    "
+                    required
+                  />
+
+                  <CalendarDays
+                    size={16}
+                    className="
+                      pointer-events-none
+                      absolute right-3
+                      top-1/2
+                      -translate-y-1/2
+                      text-[#64798a]
+                    "
+                  />
+                </div>
+              </div>
+
+              {/* SIMPAN */}
+
+              <button
+                type="submit"
+                className="
+                  mt-4
+                  h-10
+                  w-full
+                  rounded-[10px]
+                  bg-[#159b68]
+                  text-xs
+                  font-bold
+                  text-white
+                  shadow-sm
+                  transition
+                  hover:bg-[#11895b]
+                  sm:text-sm
+                "
+              >
+                Simpan
+              </button>
+            </form>
+          </main>
+        )}
       </div>
     </div>
   );
 }
 
-export default TambahBahanModal;
+// ======================================================
+// KOMPONEN NUTRISI
+// ======================================================
+
+function NutrisiItem({ icon, label, value }) {
+  return (
+    <div className="flex min-w-0 flex-col items-center text-center">
+      <div className="flex h-6 w-6 items-center justify-center text-[#169b68]">
+        {icon}
+      </div>
+
+      <p className="mt-0.5 w-full truncate text-[10px] text-[#617887]">
+        {label}
+      </p>
+
+      <p className="mt-0.5 truncate text-[10px] font-bold text-[#47616d] sm:text-xs">
+        {value}
+      </p>
+    </div>
+  );
+}

@@ -17,11 +17,13 @@ import {
 } from "lucide-react";
 
 import logoDapurCerdas from "../assets/logo-dapur-cerdas.png";
-import TambahBahanModal from "./TambahBahanModal";
 import { cekBackend } from "../services/api";
 
 /* =========================================================
    DATA BAHAN
+   CATATAN:
+   Saat ini masih data dummy.
+   Nanti bisa diganti dengan data dari API Golang + Supabase.
 ========================================================= */
 
 const bahanAwal = [
@@ -142,13 +144,7 @@ function Dashboard() {
      STATE BAHAN
   ======================================================= */
 
-  const [bahan, setBahan] = useState(bahanAwal);
-
-  /* =======================================================
-     STATE MODAL
-  ======================================================= */
-
-  const [showTambahBahan, setShowTambahBahan] = useState(false);
+  const [bahan] = useState(bahanAwal);
 
   /* =======================================================
      NAVIGASI MENU
@@ -168,14 +164,6 @@ function Dashboard() {
     }
 
     return location.pathname.startsWith(path);
-  };
-
-  /* =======================================================
-     TAMBAH BAHAN
-  ======================================================= */
-
-  const handleTambahBahan = (bahanBaru) => {
-    setBahan((prev) => [bahanBaru, ...prev]);
   };
 
   /* =======================================================
@@ -205,7 +193,9 @@ function Dashboard() {
 
           <div className="flex min-h-[62px] items-center justify-between gap-2 sm:min-h-[66px] lg:min-h-[70px]">
 
-            {/* LOGO */}
+            {/* =================================================
+                LOGO
+            ================================================== */}
 
             <button
               type="button"
@@ -229,7 +219,9 @@ function Dashboard() {
               </div>
             </button>
 
-            {/* NAVIGASI */}
+            {/* =================================================
+                NAVIGASI DESKTOP
+            ================================================== */}
 
             <nav className="hidden items-center gap-1 md:flex lg:gap-1.5">
 
@@ -273,7 +265,9 @@ function Dashboard() {
 
             </nav>
 
-            {/* BAGIAN KANAN */}
+            {/* =================================================
+                BAGIAN KANAN
+            ================================================== */}
 
             <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
 
@@ -487,7 +481,8 @@ function Dashboard() {
                   sm:text-sm
                 "
               >
-                Yuk, pilih bahan pangan bergizi untuk mendukung tumbuh kembang{" "}
+                Yuk, pilih bahan pangan bergizi untuk mendukung
+                tumbuh kembang
               </p>
 
               {/* TANGGAL */}
@@ -824,8 +819,13 @@ function Dashboard() {
               nutrisi harian husen.
             </p>
 
+            {/* =================================================
+                BUTTON RACIK RESEP AI
+            ================================================== */}
+
             <button
               type="button"
+              onClick={() => navigate("/racik-resep")}
               className="
                 mt-4
                 inline-flex
@@ -841,6 +841,7 @@ function Dashboard() {
                 shadow-sm
                 transition
                 hover:bg-[#e88700]
+                active:scale-95
                 sm:text-sm
               "
             >
@@ -849,6 +850,8 @@ function Dashboard() {
             </button>
 
           </div>
+
+          {/* ORNAMEN */}
 
           <div
             className="
@@ -871,6 +874,8 @@ function Dashboard() {
         =================================================== */}
 
         <section className="mt-6 sm:mt-7">
+
+          {/* HEADER STOCK */}
 
           <div
             className="
@@ -908,9 +913,11 @@ function Dashboard() {
 
             </div>
 
+            {/* TAMBAH BAHAN */}
+
             <button
               type="button"
-              onClick={() => setShowTambahBahan(true)}
+              onClick={() => navigate("/tambah-bahan")}
               className="
                 flex
                 items-center
@@ -926,6 +933,7 @@ function Dashboard() {
                 transition
                 hover:bg-[#155a1f]
                 active:scale-95
+                sm:text-sm
               "
             >
               <Plus size={16} />
@@ -939,11 +947,12 @@ function Dashboard() {
           <div
             className="
               grid
-              grid-cols-1
-              gap-3
-              sm:grid-cols-2
-              lg:grid-cols-4
-              xl:grid-cols-5
+              grid-cols-2
+              gap-2.5
+              sm:grid-cols-3
+              md:grid-cols-4
+              lg:grid-cols-5
+              lg:max-w-[1120px]
             "
           >
 
@@ -1039,17 +1048,6 @@ function Dashboard() {
       </main>
 
       {/* =====================================================
-          MODAL TAMBAH BAHAN
-      ===================================================== */}
-
-      {showTambahBahan && (
-        <TambahBahanModal
-          onClose={() => setShowTambahBahan(false)}
-          onSave={handleTambahBahan}
-        />
-      )}
-
-      {/* =====================================================
           MOBILE BOTTOM NAVIGATION
       ===================================================== */}
 
@@ -1117,10 +1115,13 @@ function Dashboard() {
             );
           })}
 
-          {/* AI BUTTON */}
+          {/* =================================================
+              AI BUTTON MOBILE
+          ================================================== */}
 
           <button
             type="button"
+            onClick={() => navigate("/racik-resep")}
             className="
               absolute
               -top-6
@@ -1137,6 +1138,7 @@ function Dashboard() {
               shadow-lg
               transition
               hover:scale-105
+              active:scale-95
             "
             aria-label="Resep AI"
           >
@@ -1160,18 +1162,19 @@ function BahanCard({ item }) {
     <article
       className="
         flex
-        min-h-[190px]
+        min-h-[175px]
         flex-col
-        rounded-[18px]
+        rounded-[16px]
         border
         border-[#e4eee6]
         bg-white
-        p-3.5
+        p-3
         shadow-[0_2px_8px_rgba(32,40,51,0.05)]
         transition
         hover:-translate-y-0.5
         hover:shadow-md
-        sm:min-h-[195px]
+        sm:min-h-[180px]
+        sm:p-3.5
       "
     >
 
@@ -1192,18 +1195,18 @@ function BahanCard({ item }) {
 
       {/* FOTO */}
 
-      <div className="mt-3">
+      <div className="mt-2.5">
 
         <img
           src={item.image}
           alt={item.nama}
           className="
-            h-14
-            w-14
+            h-12
+            w-12
             rounded-xl
             object-cover
-            sm:h-16
-            sm:w-16
+            sm:h-14
+            sm:w-14
           "
         />
 
@@ -1213,7 +1216,7 @@ function BahanCard({ item }) {
 
       <p
         className="
-          mt-3
+          mt-2.5
           text-xs
           text-slate-500
           sm:text-sm
@@ -1233,11 +1236,11 @@ function BahanCard({ item }) {
       <p
         className="
           mt-auto
-          pt-3
-          text-xs
+          pt-2.5
+          text-[11px]
           font-semibold
           text-slate-600
-          sm:text-sm
+          sm:text-xs
         "
       >
         {item.status}

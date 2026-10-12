@@ -231,38 +231,46 @@ function Auth() {
   ======================================================= */
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
 
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+    options: {
+      redirectTo: `${window.location.origin}/dashboard`,
+
+      queryParams: {
+        prompt: "select_account",
       },
-    });
+    },
+  });
 
-    if (error) {
-      console.error("Google Login Error:", error);
-      alert(error.message);
-    }
-  };
+  if (error) {
+    console.error("Google Login Error:", error);
+    alert(error.message);
+  }
+};
 
   /* =======================================================
      GOOGLE REGISTER
   ======================================================= */
 
   const handleGoogleRegister = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
 
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+    options: {
+      redirectTo: `${window.location.origin}/dashboard`,
+
+      queryParams: {
+        prompt: "select_account",
       },
-    });
+    },
+  });
 
-    if (error) {
-      console.error("Google Register Error:", error);
-      alert(error.message);
-    }
-  };
+  if (error) {
+    console.error("Google Register Error:", error);
+    alert(error.message);
+  }
+};
 
   return (
     <div

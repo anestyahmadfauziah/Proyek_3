@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 
 import {
   Bell,
@@ -17,62 +18,6 @@ import {
 } from "lucide-react";
 
 import logoDapurCerdas from "../assets/logo-dapur-cerdas.png";
-import { cekBackend } from "../services/api";
-
-/* =========================================================
-   DATA BAHAN
-   CATATAN:
-   Saat ini masih data dummy.
-   Nanti bisa diganti dengan data dari API Golang + Supabase.
-========================================================= */
-
-const bahanAwal = [
-  {
-    id: 1,
-    nama: "Ikan Patin",
-    jumlah: "3000 gram",
-    tanggal: "30/9",
-    image:
-      "https://images.unsplash.com/photo-1534766555764-ce878a5e3a2b?auto=format&fit=crop&w=200&q=80",
-    status: "Aman",
-  },
-  {
-    id: 2,
-    nama: "Kangkung",
-    jumlah: "1000 gram",
-    tanggal: "30/9",
-    image:
-      "https://images.unsplash.com/photo-1628773822503-930a7eaecf80?auto=format&fit=crop&w=200&q=80",
-    status: "Aman",
-  },
-  {
-    id: 3,
-    nama: "Ikan Tuna",
-    jumlah: "1000 gram",
-    tanggal: "25/9",
-    image:
-      "https://images.unsplash.com/photo-1534482421-64566f976cfa?auto=format&fit=crop&w=200&q=80",
-    status: "Perlu diolah",
-  },
-  {
-    id: 4,
-    nama: "Telur Ayam",
-    jumlah: "50 butir",
-    tanggal: "24/9",
-    image:
-      "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=200&q=80",
-    status: "Perlu diolah",
-  },
-  {
-    id: 5,
-    nama: "Tempe Papan",
-    jumlah: "1 pcs",
-    tanggal: "20/9",
-    image:
-      "https://images.unsplash.com/photo-1609501676725-7186f017a4b7?auto=format&fit=crop&w=200&q=80",
-    status: "Perlu diolah",
-  },
-];
 
 /* =========================================================
    MENU NAVIGASI
@@ -102,6 +47,202 @@ const menu = [
 ];
 
 /* =========================================================
+   HELPER GAMBAR
+========================================================= */
+
+function getImageUrl(imagePath) {
+  if (!imagePath) {
+    return "https://placehold.co/200x200?text=No+Image";
+  }
+
+  const cleanPath = imagePath
+    .trim()
+    .replace(/\\/g, "/");
+
+  /*
+   * Jika database menyimpan URL lengkap
+   */
+  if (
+    cleanPath.startsWith("http://") ||
+    cleanPath.startsWith("https://")
+  ) {
+    return cleanPath;
+  }
+
+  /*
+   * Jika sudah berupa:
+   * /image/ingredients/13-buncis.jpg
+   */
+  if (cleanPath.startsWith("/image/")) {
+    return cleanPath;
+  }
+
+  /*
+   * Jika database menyimpan:
+   * image/ingredients/13-buncis.jpg
+   */
+  if (cleanPath.startsWith("image/")) {
+    return `/${cleanPath}`;
+  }
+
+  /*
+   * Jika database menyimpan:
+   * ingredients/13-buncis.jpg
+   *
+   * File fisik:
+   * public/image/ingredients/13-buncis.jpg
+   *
+   * Maka URL:
+   * /image/ingredients/13-buncis.jpg
+   */
+  if (cleanPath.startsWith("ingredients/")) {
+    return `/image/${cleanPath}`;
+  }
+
+  /*
+   * Jika database hanya menyimpan nama file:
+   * 13-buncis.jpg
+   */
+  if (
+    !cleanPath.includes("/") &&
+    /\.(jpg|jpeg|png|webp)$/i.test(cleanPath)
+  ) {
+    return `/image/ingredients/${cleanPath}`;
+  }
+
+  /*
+   * Fallback
+   */
+  return `/${cleanPath.replace(/^\/+/, "")}`;
+}
+
+/* =========================================================
+   FORMAT JUMLAH
+========================================================= */
+
+function formatJumlah(jumlah, satuan) {
+  const angka = Number(jumlah);
+
+  if (Number.isNaN(angka)) {
+    return `${jumlah} ${satuan || ""}`.trim();
+  }
+
+  const jumlahFormatted = Number.isInteger(angka)
+    ? angka
+    : angka.toLocaleString("id-ID", {
+        maximumFractionDigits: 2,
+      });
+
+  return `${jumlahFormatted} ${satuan || ""}`.trim();
+}
+
+/* =========================================================
+   FORMAT TANGGAL
+========================================================= */
+
+function formatTanggal(tanggal) {
+  if (!tanggal) {
+    return "-";
+  }
+
+  const date = new Date(`${tanggal}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return tanggal;
+  }
+
+  return `${date.getDate()}/${date.getMonth() + 1}`;
+}
+
+/* =========================================================
+   HITUNG SELISIH HARI
+========================================================= */
+
+function hitungSelisihHari(tanggalKadaluarsa) {
+  if (!tanggalKadaluarsa) {
+    return null;
+  }
+
+  const hariIni = new Date();
+  hariIni.setHours(0, 0, 0, 0);
+
+  const tanggalExp = new Date(
+    `${tanggalKadaluarsa}T00:00:00`
+  );
+
+  if (Number.isNaN(tanggalExp.getTime())) {
+    return null;
+  }
+
+  return Math.ceil(
+    (tanggalExp.getTime() - hariIni.getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
+}
+
+/* =========================================================
+   TENTUKAN STATUS BAHAN
+========================================================= */
+
+function tentukanStatus(tanggalKadaluarsa) {
+  const selisihHari = hitungSelisihHari(
+    tanggalKadaluarsa
+  );
+
+  if (selisihHari === null) {
+    return "Aman";
+  }
+
+  /*
+   * Sudah kedaluwarsa
+   */
+  if (selisihHari < 0) {
+    return "Kedaluwarsa";
+  }
+
+  /*
+   * Kedaluwarsa hari ini sampai 3 hari ke depan
+   */
+  if (selisihHari <= 3) {
+    return "Perlu diolah";
+  }
+
+  return "Aman";
+}
+
+/* =========================================================
+   LABEL STATUS
+========================================================= */
+
+function getStatusLabel(item) {
+  if (item.status === "Kedaluwarsa") {
+    return "Kedaluwarsa";
+  }
+
+  if (item.status === "Perlu diolah") {
+    const selisihHari = hitungSelisihHari(
+      item.tanggalKadaluarsa
+    );
+
+    if (selisihHari === 0) {
+      return "Kedaluwarsa hari ini";
+    }
+
+    if (selisihHari === 1) {
+      return "Kedaluwarsa besok";
+    }
+
+    if (selisihHari !== null && selisihHari > 1) {
+      return `Kedaluwarsa ${selisihHari} hari lagi`;
+    }
+
+    return "Segera diolah";
+  }
+
+  return "Aman";
+}
+
+/* =========================================================
    DASHBOARD
 ========================================================= */
 
@@ -109,42 +250,257 @@ function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [session, setSession] = useState(null);
+  const [loadingSession, setLoadingSession] =
+    useState(true);
+
+  const [bahan, setBahan] = useState([]);
+  const [loadingBahan, setLoadingBahan] =
+    useState(true);
+  const [errorBahan, setErrorBahan] = useState("");
+
   /* =======================================================
-     CEK KONEKSI KE BACKEND GOLANG
+     SESSION
   ======================================================= */
 
   useEffect(() => {
-    const cekKoneksiBackend = async () => {
+    const getSession = async () => {
       try {
-        const data = await cekBackend();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        console.log("RESPON BACKEND GOLANG:", data);
+        console.log("SESSION USER:", session?.user);
+
+        console.log(
+          "USER METADATA:",
+          session?.user?.user_metadata
+        );
+
+        setSession(session);
       } catch (error) {
         console.error(
-          "GAGAL TERHUBUNG KE BACKEND GOLANG:",
+          "Gagal mengambil session:",
           error
         );
+      } finally {
+        setLoadingSession(false);
       }
     };
 
-    cekKoneksiBackend();
+    getSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  /* =======================================================
+     AMBIL DATA STOK DARI DATABASE
+  ======================================================= */
+
+  useEffect(() => {
+    const ambilDataBahan = async () => {
+      try {
+        setLoadingBahan(true);
+        setErrorBahan("");
+
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) {
+          throw userError;
+        }
+
+        /*
+         * Belum login
+         */
+        if (!user) {
+          setBahan([]);
+          return;
+        }
+
+        /* =================================================
+           AMBIL STOK USER
+        ================================================= */
+
+        const {
+          data: stokData,
+          error: stokError,
+        } = await supabase
+          .from("stok")
+          .select(
+            `
+              id,
+              user_id,
+              bahan_pangan_id,
+              jumlah,
+              satuan,
+              tanggal_masuk,
+              tanggal_kadaluarsa
+            `
+          )
+          .eq("user_id", user.id)
+          .order("tanggal_kadaluarsa", {
+            ascending: true,
+          });
+
+        if (stokError) {
+          throw stokError;
+        }
+
+        /*
+         * Belum ada stok
+         */
+        if (!stokData || stokData.length === 0) {
+          setBahan([]);
+          return;
+        }
+
+        /* =================================================
+           AMBIL ID BAHAN
+        ================================================= */
+
+        const bahanIds = [
+          ...new Set(
+            stokData
+              .map(
+                (item) => item.bahan_pangan_id
+              )
+              .filter(Boolean)
+          ),
+        ];
+
+        let ingredientsData = [];
+
+        /* =================================================
+           AMBIL DATA MASTER BAHAN
+        ================================================= */
+
+        if (bahanIds.length > 0) {
+          const {
+            data,
+            error: ingredientsError,
+          } = await supabase
+            .from("ingredients_master")
+            .select(
+              `
+                id,
+                name,
+                image_path
+              `
+            )
+            .in("id", bahanIds);
+
+          if (ingredientsError) {
+            throw ingredientsError;
+          }
+
+          ingredientsData = data || [];
+        }
+
+        /* =================================================
+           GABUNGKAN STOK + MASTER BAHAN
+        ================================================= */
+
+        const hasil = stokData.map((stok) => {
+          const bahanMaster =
+            ingredientsData.find(
+              (item) =>
+                item.id ===
+                stok.bahan_pangan_id
+            );
+
+          const imageUrl = getImageUrl(
+            bahanMaster?.image_path
+          );
+
+          console.log(
+            "GAMBAR:",
+            bahanMaster?.name,
+            "image_path:",
+            bahanMaster?.image_path,
+            "URL:",
+            imageUrl
+          );
+
+          return {
+            id: stok.id,
+
+            nama:
+              bahanMaster?.name ||
+              "Bahan Tidak Diketahui",
+
+            jumlah: formatJumlah(
+              stok.jumlah,
+              stok.satuan
+            ),
+
+            tanggal: formatTanggal(
+              stok.tanggal_kadaluarsa
+            ),
+
+            image: imageUrl,
+
+            status: tentukanStatus(
+              stok.tanggal_kadaluarsa
+            ),
+
+            tanggalKadaluarsa:
+              stok.tanggal_kadaluarsa,
+
+            tanggalMasuk:
+              stok.tanggal_masuk,
+          };
+        });
+
+        setBahan(hasil);
+      } catch (error) {
+        console.error(
+          "Gagal mengambil data bahan:",
+          error
+        );
+
+        setErrorBahan(
+          error?.message ||
+            "Gagal mengambil data stok."
+        );
+
+        setBahan([]);
+      } finally {
+        setLoadingBahan(false);
+      }
+    };
+
+    /*
+     * Hanya ambil data setelah status session
+     * sudah selesai diperiksa.
+     */
+    if (!loadingSession) {
+      ambilDataBahan();
+    }
+  }, [session, loadingSession]);
 
   /* =======================================================
      TANGGAL HARI INI
   ======================================================= */
 
-  const tanggalHariIni = new Intl.DateTimeFormat("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-  }).format(new Date());
-
-  /* =======================================================
-     STATE BAHAN
-  ======================================================= */
-
-  const [bahan] = useState(bahanAwal);
+  const tanggalHariIni =
+    new Intl.DateTimeFormat("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+    }).format(new Date());
 
   /* =======================================================
      NAVIGASI MENU
@@ -167,7 +523,7 @@ function Dashboard() {
   };
 
   /* =======================================================
-     JUMLAH STATISTIK
+     STATISTIK STOK
   ======================================================= */
 
   const totalBahan = bahan.length;
@@ -179,6 +535,33 @@ function Dashboard() {
   const jumlahPerluDiolah = bahan.filter(
     (item) => item.status === "Perlu diolah"
   ).length;
+
+  const jumlahKedaluwarsa = bahan.filter(
+    (item) => item.status === "Kedaluwarsa"
+  ).length;
+
+  /*
+   * Bahan yang perlu diperhatikan di Dashboard.
+   *
+   * Dashboard fokus pada KONDISI STOK SAAT INI.
+   */
+  const bahanPrioritas = bahan
+    .filter(
+      (item) =>
+        item.status === "Perlu diolah" ||
+        item.status === "Kedaluwarsa"
+    )
+    .slice(0, 3);
+
+  /* =======================================================
+     NAMA USER
+  ======================================================= */
+
+  const namaUser =
+    session?.user?.user_metadata?.nama ||
+    session?.user?.user_metadata?.full_name ||
+    session?.user?.user_metadata?.name ||
+    "Pengguna";
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f5f9f5] font-jakarta text-[#202833]">
@@ -193,9 +576,7 @@ function Dashboard() {
 
           <div className="flex min-h-[62px] items-center justify-between gap-2 sm:min-h-[66px] lg:min-h-[70px]">
 
-            {/* =================================================
-                LOGO
-            ================================================== */}
+            {/* LOGO */}
 
             <button
               type="button"
@@ -219,21 +600,23 @@ function Dashboard() {
               </div>
             </button>
 
-            {/* =================================================
-                NAVIGASI DESKTOP
-            ================================================== */}
+            {/* NAVIGASI DESKTOP */}
 
             <nav className="hidden items-center gap-1 md:flex lg:gap-1.5">
 
               {menu.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.path);
+                const active = isActive(
+                  item.path
+                );
 
                 return (
                   <button
                     key={item.label}
                     type="button"
-                    onClick={() => handleMenuClick(item)}
+                    onClick={() =>
+                      handleMenuClick(item)
+                    }
                     className={`
                       flex
                       items-center
@@ -255,7 +638,9 @@ function Dashboard() {
                   >
                     <Icon
                       size={17}
-                      strokeWidth={active ? 2.5 : 2}
+                      strokeWidth={
+                        active ? 2.5 : 2
+                      }
                     />
 
                     <span>{item.label}</span>
@@ -265,17 +650,19 @@ function Dashboard() {
 
             </nav>
 
-            {/* =================================================
-                BAGIAN KANAN
-            ================================================== */}
+            {/* BAGIAN KANAN */}
 
             <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
 
-              {/* NOTIFIKASI */}
+              {/* =================================================
+                  NOTIFIKASI
+              ================================================= */}
 
               <button
                 type="button"
-                onClick={() => navigate("/notifikasi")}
+                onClick={() =>
+                  navigate("/notifikasi")
+                }
                 className="
                   relative
                   flex
@@ -294,75 +681,113 @@ function Dashboard() {
               >
                 <Bell size={19} />
 
-                <span
+                {jumlahPerluDiolah +
+                  jumlahKedaluwarsa >
+                  0 && (
+                  <span
+                    className="
+                      absolute
+                      right-0
+                      top-0
+                      flex
+                      h-4
+                      min-w-4
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-red-500
+                      px-1
+                      text-[9px]
+                      font-bold
+                      text-white
+                    "
+                  >
+                    {jumlahPerluDiolah +
+                      jumlahKedaluwarsa}
+                  </span>
+                )}
+              </button>
+
+              {/* =================================================
+                  LOGIN / REGISTER / PROFILE
+              ================================================= */}
+
+              {!session ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate("/login")
+                    }
+                    className="
+                      rounded-lg
+                      bg-[#23652d]
+                      px-2.5
+                      py-1.5
+                      text-[11px]
+                      font-semibold
+                      text-white
+                      transition
+                      hover:bg-[#1b5424]
+                      sm:px-3
+                      sm:py-2
+                      sm:text-xs
+                      lg:text-sm
+                    "
+                  >
+                    Masuk
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate("/register")
+                    }
+                    className="
+                      rounded-lg
+                      border
+                      border-[#23652d]
+                      px-2.5
+                      py-1.5
+                      text-[11px]
+                      font-semibold
+                      text-[#23652d]
+                      transition
+                      hover:bg-[#e8f7eb]
+                      sm:px-3
+                      sm:py-2
+                      sm:text-xs
+                      lg:text-sm
+                    "
+                  >
+                    Daftar
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate("/profil")
+                  }
                   className="
-                    absolute
-                    right-0
-                    top-0
                     flex
-                    h-4
-                    min-w-4
+                    h-9
+                    w-9
                     items-center
                     justify-center
                     rounded-full
-                    bg-red-500
-                    px-1
-                    text-[9px]
-                    font-bold
-                    text-white
+                    bg-[#e8f5e9]
+                    text-[#176324]
+                    transition
+                    hover:bg-[#d8eddc]
+                    sm:h-10
+                    sm:w-10
                   "
+                  aria-label="Profil"
                 >
-                  2
-                </span>
-              </button>
-
-              {/* LOGIN */}
-
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="
-                  rounded-lg
-                  bg-[#23652d]
-                  px-2.5
-                  py-1.5
-                  text-[11px]
-                  font-semibold
-                  text-white
-                  transition
-                  hover:bg-[#1b5424]
-                  sm:px-3
-                  sm:py-2
-                  sm:text-xs
-                  lg:text-sm
-                "
-              >
-                Masuk
-              </button>
-
-              {/* PROFILE */}
-
-              <button
-                type="button"
-                onClick={() => navigate("/profil")}
-                className="
-                  flex
-                  h-9
-                  w-9
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-[#e8f5e9]
-                  text-[#176324]
-                  transition
-                  hover:bg-[#d8eddc]
-                  sm:h-10
-                  sm:w-10
-                "
-                aria-label="Profil"
-              >
-                <UserCircle size={21} />
-              </button>
+                  <UserCircle size={21} />
+                </button>
+              )}
 
             </div>
 
@@ -415,8 +840,6 @@ function Dashboard() {
           "
         >
 
-          {/* ORNAMEN */}
-
           <div
             className="
               pointer-events-none
@@ -432,8 +855,6 @@ function Dashboard() {
             "
           />
 
-          {/* HERO CONTENT */}
-
           <div
             className="
               relative
@@ -445,8 +866,6 @@ function Dashboard() {
               lg:items-stretch
             "
           >
-
-            {/* BAGIAN KIRI */}
 
             <div
               className="
@@ -469,7 +888,7 @@ function Dashboard() {
                   lg:text-3xl
                 "
               >
-                Halo! 👋
+                Halo, {namaUser}! 👋
               </h2>
 
               <p
@@ -481,11 +900,9 @@ function Dashboard() {
                   sm:text-sm
                 "
               >
-                Yuk, pilih bahan pangan bergizi untuk mendukung
-                tumbuh kembang
+                Yuk, pilih bahan pangan bergizi
+                untuk mendukung tumbuh kembang.
               </p>
-
-              {/* TANGGAL */}
 
               <div
                 className="
@@ -506,7 +923,7 @@ function Dashboard() {
 
             </div>
 
-            {/* BAGIAN KANAN */}
+            {/* STATISTIK KONDISI STOK */}
 
             <div
               className="
@@ -519,7 +936,7 @@ function Dashboard() {
               "
             >
 
-              {/* TOTAL BAHAN */}
+              {/* TOTAL */}
 
               <div
                 className="
@@ -530,7 +947,7 @@ function Dashboard() {
                 "
               >
                 <p className="text-2xl font-bold sm:text-3xl">
-                  {totalBahan}
+                  {loadingBahan ? "..." : totalBahan}
                 </p>
 
                 <p className="mt-0.5 text-[11px] font-medium text-white/85 sm:text-xs">
@@ -550,7 +967,7 @@ function Dashboard() {
                 "
               >
                 <p className="text-2xl font-bold sm:text-3xl">
-                  {jumlahAman}
+                  {loadingBahan ? "..." : jumlahAman}
                 </p>
 
                 <p className="mt-0.5 text-[11px] font-medium text-slate-600 sm:text-xs">
@@ -569,11 +986,14 @@ function Dashboard() {
                 "
               >
                 <p className="text-2xl font-bold text-[#f8d35b] sm:text-3xl">
-                  {jumlahPerluDiolah}
+                  {loadingBahan
+                    ? "..."
+                    : jumlahPerluDiolah +
+                      jumlahKedaluwarsa}
                 </p>
 
                 <p className="mt-0.5 text-[11px] font-medium text-white sm:text-xs">
-                  Perlu Diolah
+                  Perlu Diperhatikan
                 </p>
               </div>
 
@@ -584,7 +1004,7 @@ function Dashboard() {
         </section>
 
         {/* ===================================================
-            WARNING
+            KONDISI STOK SAAT INI
         =================================================== */}
 
         <section
@@ -601,8 +1021,6 @@ function Dashboard() {
             sm:p-5
           "
         >
-
-          {/* HEADER WARNING */}
 
           <div
             className="
@@ -636,12 +1054,24 @@ function Dashboard() {
               <div className="min-w-0">
 
                 <h3 className="text-sm font-bold sm:text-base">
-                  Peringatan Kulkas
+                  Kondisi Stok Saat Ini
                 </h3>
 
-                <p className="mt-0.5 text-xs font-semibold text-red-500">
-                  ● {jumlahPerluDiolah} Bahan Perlu Diolah Segera!
-                </p>
+                {jumlahKedaluwarsa > 0 ? (
+                  <p className="mt-0.5 text-xs font-semibold text-red-500">
+                    ● {jumlahKedaluwarsa} bahan sudah
+                    kedaluwarsa
+                  </p>
+                ) : jumlahPerluDiolah > 0 ? (
+                  <p className="mt-0.5 text-xs font-semibold text-orange-500">
+                    ● {jumlahPerluDiolah} bahan perlu
+                    diolah segera
+                  </p>
+                ) : (
+                  <p className="mt-0.5 text-xs font-semibold text-green-600">
+                    ● Semua bahan dalam kondisi aman
+                  </p>
+                )}
 
               </div>
 
@@ -660,13 +1090,13 @@ function Dashboard() {
                 text-[#29934b]
               "
             >
-              Lihat Selengkapnya
+              Lihat Stok
               <ChevronRight size={15} />
             </button>
 
           </div>
 
-          {/* WARNING ITEMS */}
+          {/* BAHAN YANG PERLU DIPERHATIKAN */}
 
           <div
             className="
@@ -679,12 +1109,27 @@ function Dashboard() {
             "
           >
 
-            {bahan
-              .filter(
-                (item) => item.status === "Perlu diolah"
-              )
-              .slice(0, 3)
-              .map((item) => (
+            {loadingBahan ? (
+              <p className="col-span-full text-xs text-slate-400">
+                Memuat data bahan...
+              </p>
+            ) : errorBahan ? (
+              <p className="col-span-full text-xs text-red-500">
+                {errorBahan}
+              </p>
+            ) : bahanPrioritas.length === 0 ? (
+              <div className="col-span-full rounded-xl bg-[#f7faf7] px-4 py-4 text-center">
+                <p className="text-xs font-medium text-green-600">
+                  Semua bahan dalam kondisi baik.
+                </p>
+
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Tidak ada bahan yang perlu diolah
+                  segera.
+                </p>
+              </div>
+            ) : (
+              bahanPrioritas.map((item) => (
                 <div
                   key={item.id}
                   className="
@@ -699,8 +1144,6 @@ function Dashboard() {
                     py-2
                   "
                 >
-
-                  {/* FOTO + NAMA */}
 
                   <div
                     className="
@@ -724,6 +1167,13 @@ function Dashboard() {
                         sm:h-11
                         sm:w-11
                       "
+                      onError={(event) => {
+                        event.currentTarget.onerror =
+                          null;
+
+                        event.currentTarget.src =
+                          "https://placehold.co/200x200?text=No+Image";
+                      }}
                     />
 
                     <div className="min-w-0">
@@ -732,15 +1182,20 @@ function Dashboard() {
                         {item.nama}
                       </p>
 
-                      <p className="text-xs text-red-500">
-                        Kedaluwarsa
+                      <p
+                        className={`text-xs ${
+                          item.status ===
+                          "Kedaluwarsa"
+                            ? "text-red-500"
+                            : "text-orange-500"
+                        }`}
+                      >
+                        {getStatusLabel(item)}
                       </p>
 
                     </div>
 
                   </div>
-
-                  {/* JUMLAH */}
 
                   <span
                     className="
@@ -760,7 +1215,8 @@ function Dashboard() {
                   </span>
 
                 </div>
-              ))}
+              ))
+            )}
 
           </div>
 
@@ -815,17 +1271,15 @@ function Dashboard() {
                 sm:text-sm
               "
             >
-              AI otomatis menyesuaikan stok kulkas dengan target
-              nutrisi harian husen.
+              AI otomatis menyesuaikan stok kulkas
+              dengan bahan yang tersedia.
             </p>
-
-            {/* =================================================
-                BUTTON RACIK RESEP AI
-            ================================================== */}
 
             <button
               type="button"
-              onClick={() => navigate("/racik-resep")}
+              onClick={() =>
+                navigate("/racik-resep")
+              }
               className="
                 mt-4
                 inline-flex
@@ -851,8 +1305,6 @@ function Dashboard() {
 
           </div>
 
-          {/* ORNAMEN */}
-
           <div
             className="
               pointer-events-none
@@ -870,12 +1322,10 @@ function Dashboard() {
         </section>
 
         {/* ===================================================
-            STOCK
+            RINGKASAN STOK
         =================================================== */}
 
         <section className="mt-6 sm:mt-7">
-
-          {/* HEADER STOCK */}
 
           <div
             className="
@@ -913,11 +1363,11 @@ function Dashboard() {
 
             </div>
 
-            {/* TAMBAH BAHAN */}
-
             <button
               type="button"
-              onClick={() => navigate("/tambah-bahan")}
+              onClick={() =>
+                navigate("/tambah-bahan")
+              }
               className="
                 flex
                 items-center
@@ -942,8 +1392,6 @@ function Dashboard() {
 
           </div>
 
-          {/* GRID CARD */}
-
           <div
             className="
               grid
@@ -956,16 +1404,24 @@ function Dashboard() {
             "
           >
 
-            {bahan.map((item) => (
-              <BahanCard
-                key={item.id}
-                item={item}
-              />
-            ))}
+            {loadingBahan ? (
+              <p className="col-span-full text-xs text-slate-400">
+                Memuat bahan kulkas...
+              </p>
+            ) : bahan.length === 0 ? (
+              <p className="col-span-full text-xs text-slate-400">
+                Belum ada bahan di stok kulkas.
+              </p>
+            ) : (
+              bahan.map((item) => (
+                <BahanCard
+                  key={item.id}
+                  item={item}
+                />
+              ))
+            )}
 
           </div>
-
-          {/* LIHAT SEMUA */}
 
           <button
             type="button"
@@ -1037,8 +1493,8 @@ function Dashboard() {
                 text-[#765e43]
               "
             >
-              Untuk husen, pastikan 1 sumber protein hewani di
-              tiap makan utama.
+              Pastikan bahan pangan yang mendekati
+              kedaluwarsa digunakan terlebih dahulu.
             </p>
 
           </div>
@@ -1073,15 +1529,18 @@ function Dashboard() {
         <div className="mx-auto flex max-w-xl items-end justify-around">
 
           {menu.map((item) => {
-
             const Icon = item.icon;
-            const active = isActive(item.path);
+            const active = isActive(
+              item.path
+            );
 
             return (
               <button
                 key={item.label}
                 type="button"
-                onClick={() => handleMenuClick(item)}
+                onClick={() =>
+                  handleMenuClick(item)
+                }
                 className={`
                   flex
                   min-w-0
@@ -1104,7 +1563,9 @@ function Dashboard() {
 
                 <Icon
                   size={20}
-                  strokeWidth={active ? 2.5 : 2}
+                  strokeWidth={
+                    active ? 2.5 : 2
+                  }
                 />
 
                 <span className="truncate">
@@ -1115,13 +1576,13 @@ function Dashboard() {
             );
           })}
 
-          {/* =================================================
-              AI BUTTON MOBILE
-          ================================================== */}
+          {/* TOMBOL AI */}
 
           <button
             type="button"
-            onClick={() => navigate("/racik-resep")}
+            onClick={() =>
+              navigate("/racik-resep")
+            }
             className="
               absolute
               -top-6
@@ -1178,8 +1639,6 @@ function BahanCard({ item }) {
       "
     >
 
-      {/* NAMA */}
-
       <h3
         className="
           truncate
@@ -1192,8 +1651,6 @@ function BahanCard({ item }) {
       >
         {item.nama}
       </h3>
-
-      {/* FOTO */}
 
       <div className="mt-2.5">
 
@@ -1208,11 +1665,15 @@ function BahanCard({ item }) {
             sm:h-14
             sm:w-14
           "
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+
+            event.currentTarget.src =
+              "https://placehold.co/200x200?text=No+Image";
+          }}
         />
 
       </div>
-
-      {/* JUMLAH + TANGGAL */}
 
       <p
         className="
@@ -1231,17 +1692,21 @@ function BahanCard({ item }) {
         {item.tanggal}
       </p>
 
-      {/* STATUS */}
-
       <p
-        className="
+        className={`
           mt-auto
           pt-2.5
           text-[11px]
           font-semibold
-          text-slate-600
           sm:text-xs
-        "
+          ${
+            item.status === "Kedaluwarsa"
+              ? "text-red-500"
+              : item.status === "Perlu diolah"
+              ? "text-orange-500"
+              : "text-green-600"
+          }
+        `}
       >
         {item.status}
       </p>

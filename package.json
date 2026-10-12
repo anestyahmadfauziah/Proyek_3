@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "images:ingredients": "node scripts/download-ingredient-images.js",
     "preview": "vite preview"
   },
   "dependencies": {

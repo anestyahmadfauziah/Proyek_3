@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
+
 import {
   ArrowLeft,
   Search,
@@ -12,181 +14,101 @@ import {
   Beef,
   Wheat,
   Milk,
+  Loader2,
 } from "lucide-react";
 
 // ======================================================
-// DATA BAHAN
+// HELPER GAMBAR
 // ======================================================
 
-const bahanData = [
-  {
-    id: 1,
-    nama: "Kangkung",
-    kategori: "Sayuran",
-    deskripsi:
-      "Sayuran hijau yang kaya akan vitamin A, K, dan serat.",
-    image:
-      "https://images.unsplash.com/photo-1515367462048-0d2f1e8f5e3c?auto=format&fit=crop&w=300&q=80",
-    nutrisi: {
-      kalori: "19 kkal",
-      protein: "2.6 g",
-      lemak: "0.2 g",
-      karbohidrat: "3.1 g",
-      serat: "2.1 g",
-    },
-  },
-  {
-    id: 2,
-    nama: "Bayam",
-    kategori: "Sayuran",
-    deskripsi:
-      "Sayuran hijau yang kaya zat besi, vitamin, dan mineral.",
-    image:
-      "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=300&q=80",
-    nutrisi: {
-      kalori: "23 kkal",
-      protein: "2.9 g",
-      lemak: "0.4 g",
-      karbohidrat: "3.6 g",
-      serat: "2.2 g",
-    },
-  },
-  {
-    id: 3,
-    nama: "Sawi",
-    kategori: "Sayuran",
-    deskripsi:
-      "Sayuran hijau dengan kandungan vitamin dan mineral.",
-    image:
-      "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?auto=format&fit=crop&w=300&q=80",
-    nutrisi: {
-      kalori: "27 kkal",
-      protein: "2.9 g",
-      lemak: "0.4 g",
-      karbohidrat: "4.7 g",
-      serat: "2.0 g",
-    },
-  },
-  {
-    id: 4,
-    nama: "Wortel",
-    kategori: "Sayuran",
-    deskripsi:
-      "Sayuran berwarna oranye yang kaya vitamin A dan beta karoten.",
-    image:
-      "https://images.unsplash.com/photo-1447175008436-170170753d52?auto=format&fit=crop&w=300&q=80",
-    nutrisi: {
-      kalori: "41 kkal",
-      protein: "0.9 g",
-      lemak: "0.2 g",
-      karbohidrat: "9.6 g",
-      serat: "2.8 g",
-    },
-  },
-  {
-    id: 5,
-    nama: "Brokoli",
-    kategori: "Sayuran",
-    deskripsi:
-      "Sayuran hijau yang kaya vitamin C, K, folat, dan serat.",
-    image:
-      "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?auto=format&fit=crop&w=300&q=80",
-    nutrisi: {
-      kalori: "34 kkal",
-      protein: "2.8 g",
-      lemak: "0.4 g",
-      karbohidrat: "6.6 g",
-      serat: "2.6 g",
-    },
-  },
-  {
-    id: 6,
-    nama: "Kol",
-    kategori: "Sayuran",
-    deskripsi:
-      "Sayuran yang mengandung vitamin C, K, dan serat.",
-    image:
-      "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?auto=format&fit=crop&w=300&q=80",
-    nutrisi: {
-      kalori: "25 kkal",
-      protein: "1.3 g",
-      lemak: "0.1 g",
-      karbohidrat: "5.8 g",
-      serat: "2.5 g",
-    },
-  },
-  {
-    id: 7,
-    nama: "Ikan Tuna",
-    kategori: "Protein",
-    deskripsi:
-      "Sumber protein hewani yang kaya omega-3 dan vitamin B.",
-    image:
-      "https://images.unsplash.com/photo-1544943910-4c1dc44aab44?auto=format&fit=crop&w=300&q=80",
-    nutrisi: {
-      kalori: "132 kkal",
-      protein: "28 g",
-      lemak: "1.3 g",
-      karbohidrat: "0 g",
-      serat: "0 g",
-    },
-  },
-  {
-    id: 8,
-    nama: "Telur Ayam",
-    kategori: "Protein",
-    deskripsi:
-      "Sumber protein lengkap dengan berbagai vitamin dan mineral.",
-    image:
-      "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=300&q=80",
-    nutrisi: {
-      kalori: "143 kkal",
-      protein: "12.6 g",
-      lemak: "9.5 g",
-      karbohidrat: "0.7 g",
-      serat: "0 g",
-    },
-  },
-  {
-    id: 9,
-    nama: "Apel",
-    kategori: "Buah-buahan",
-    deskripsi:
-      "Buah yang kaya serat, vitamin C, dan antioksidan.",
-    image:
-      "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=300&q=80",
-    nutrisi: {
-      kalori: "52 kkal",
-      protein: "0.3 g",
-      lemak: "0.2 g",
-      karbohidrat: "13.8 g",
-      serat: "2.4 g",
-    },
-  },
-];
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) {
+    return "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80";
+  }
+
+  let path = String(imagePath).trim();
+
+  if (!path) {
+    return "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=300&q=80";
+  }
+
+  // Normalisasi garis miring
+  path = path.replace(/\\/g, "/");
+
+  // Jika sudah berupa URL
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  // Hilangkan ./ dan slash awal
+  path = path.replace(/^\.\//, "").replace(/^\/+/, "");
+
+  // Hilangkan prefix public/
+  if (path.startsWith("public/")) {
+    path = path.slice("public/".length);
+  }
+
+  // Jika path sudah image/ingredients/...
+  if (path.startsWith("image/ingredients/")) {
+    return `/${path}`;
+  }
+
+  // Jika path berupa ingredients/...
+  if (path.startsWith("ingredients/")) {
+    return `/image/${path}`;
+  }
+
+  // Jika hanya nama file, misalnya 13-buncis.jpg
+  if (!path.includes("/")) {
+    return `/image/ingredients/${path}`;
+  }
+
+  // Jika path memiliki folder ingredients di dalamnya
+  const index = path.indexOf("ingredients/");
+
+  if (index !== -1) {
+    return `/image/${path.slice(index)}`;
+  }
+
+  // Path public lainnya
+  return `/${path}`;
+};
+
 
 // ======================================================
-// KATEGORI
+// ICON KATEGORI
 // ======================================================
 
-const kategoriData = [
-  {
-    nama: "Semua",
-    icon: Leaf,
-  },
-  {
-    nama: "Sayuran",
-    icon: Leaf,
-  },
-  {
-    nama: "Buah-buahan",
-    icon: null,
-  },
-  {
-    nama: "Protein",
-    icon: Beef,
-  },
-];
+const getCategoryIcon = (namaKategori) => {
+  const nama = namaKategori.toLowerCase();
+
+  if (
+    nama.includes("protein") ||
+    nama.includes("hewani") ||
+    nama.includes("daging") ||
+    nama.includes("ikan")
+  ) {
+    return Beef;
+  }
+
+  if (
+    nama.includes("karbo") ||
+    nama.includes("beras") ||
+    nama.includes("tepung")
+  ) {
+    return Wheat;
+  }
+
+  if (
+    nama.includes("dairy") ||
+    nama.includes("susu")
+  ) {
+    return Milk;
+  }
+
+  return Leaf;
+};
 
 // ======================================================
 // KOMPONEN UTAMA
@@ -199,18 +121,221 @@ export default function TambahBahanModal() {
 
   const [search, setSearch] = useState("");
 
-  const [kategoriAktif, setKategoriAktif] = useState("Semua");
+  const [kategoriAktif, setKategoriAktif] =
+    useState("Semua");
 
-  const [bahanTerpilih, setBahanTerpilih] = useState(null);
+  const [bahanTerpilih, setBahanTerpilih] =
+    useState(null);
 
   const [jumlah, setJumlah] = useState("500");
 
   const [satuan, setSatuan] = useState("gram");
 
-  const [tanggalMasuk, setTanggalMasuk] = useState("06/10/2026");
+  const [tanggalMasuk, setTanggalMasuk] =
+    useState("06/10/2026");
 
   const [tanggalKadaluarsa, setTanggalKadaluarsa] =
     useState("10/10/2026");
+
+  // ====================================================
+  // DATA DARI DATABASE
+  // ====================================================
+
+  const [bahanData, setBahanData] = useState([]);
+
+  const [kategoriData, setKategoriData] = useState([
+    {
+      nama: "Semua",
+      icon: Leaf,
+    },
+  ]);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
+  // Loading khusus saat menyimpan
+  const [saving, setSaving] = useState(false);
+
+  // ====================================================
+  // AMBIL DATA DARI DATABASE
+  // ====================================================
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        // ==================================================
+        // AMBIL KATEGORI
+        // ==================================================
+
+        const {
+          data: kategori,
+          error: kategoriError,
+        } = await supabase
+          .from("ingredient_categories")
+          .select("id, name")
+          .order("id", {
+            ascending: true,
+          });
+
+        if (kategoriError) {
+          throw kategoriError;
+        }
+
+        // ==================================================
+        // AMBIL INGREDIENT MASTER
+        // ==================================================
+
+        const {
+          data: ingredients,
+          error: ingredientsError,
+        } = await supabase
+          .from("ingredients_master")
+          .select(`
+            id,
+            category_id,
+            name,
+            default_unit,
+            image_path,
+            calories_per_100g,
+            protein_g,
+            fat_g,
+            carbs_g,
+            iron_mg,
+            zinc_mg,
+            vitamin_a_mcg,
+            vitamin_c_mg
+          `)
+          .order("name", {
+            ascending: true,
+          });
+
+        if (ingredientsError) {
+          throw ingredientsError;
+        }
+
+        // ==================================================
+        // BUAT MAP KATEGORI
+        // ==================================================
+
+        const kategoriMap = new Map(
+          (kategori || []).map((item) => [
+            item.id,
+            item.name,
+          ])
+        );
+
+        // ==================================================
+        // UBAH DATA DATABASE KE FORMAT UI
+        // ==================================================
+
+        const bahanMapped = (
+          ingredients || []
+        ).map((item) => {
+          const namaKategori =
+            kategoriMap.get(item.category_id) ||
+            "Lainnya";
+
+          return {
+            id: item.id,
+
+            nama: item.name,
+
+            kategori: namaKategori,
+
+            categoryId: item.category_id,
+
+            defaultUnit:
+              item.default_unit || "gram",
+
+            image: getImageUrl(item.image_path),
+
+            imagePath: item.image_path,
+
+            deskripsi:
+              `Informasi nutrisi ${item.name} per 100 gram.`,
+
+            nutrisi: {
+              kalori:
+                item.calories_per_100g !== null &&
+                item.calories_per_100g !== undefined
+                  ? `${item.calories_per_100g} kkal`
+                  : "-",
+
+              protein:
+                item.protein_g !== null &&
+                item.protein_g !== undefined
+                  ? `${item.protein_g} g`
+                  : "-",
+
+              lemak:
+                item.fat_g !== null &&
+                item.fat_g !== undefined
+                  ? `${item.fat_g} g`
+                  : "-",
+
+              karbohidrat:
+                item.carbs_g !== null &&
+                item.carbs_g !== undefined
+                  ? `${item.carbs_g} g`
+                  : "-",
+
+              // Belum ada kolom serat pada query
+              serat: "-",
+            },
+
+            nutrisiRaw: {
+              kalori: item.calories_per_100g,
+              protein: item.protein_g,
+              lemak: item.fat_g,
+              karbohidrat: item.carbs_g,
+              zatBesi: item.iron_mg,
+              zinc: item.zinc_mg,
+              vitaminA: item.vitamin_a_mcg,
+              vitaminC: item.vitamin_c_mg,
+            },
+          };
+        });
+
+        setBahanData(bahanMapped);
+
+        // ==================================================
+        // BUAT FILTER KATEGORI DARI DATABASE
+        // ==================================================
+
+        const kategoriMapped = [
+          {
+            nama: "Semua",
+            icon: Leaf,
+          },
+
+          ...(kategori || []).map((item) => ({
+            nama: item.name,
+            icon: getCategoryIcon(item.name),
+          })),
+        ];
+
+        setKategoriData(kategoriMapped);
+
+      } catch (err) {
+        console.error(
+          "Gagal mengambil data bahan:",
+          err
+        );
+
+        setError(
+          "Data bahan gagal dimuat dari database."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // ====================================================
   // FILTER BAHAN
@@ -228,7 +353,11 @@ export default function TambahBahanModal() {
 
       return cocokSearch && cocokKategori;
     });
-  }, [search, kategoriAktif]);
+  }, [
+    bahanData,
+    search,
+    kategoriAktif,
+  ]);
 
   // ====================================================
   // PILIH BAHAN
@@ -236,6 +365,11 @@ export default function TambahBahanModal() {
 
   const pilihBahan = (item) => {
     setBahanTerpilih(item);
+
+    // Menggunakan satuan default dari database
+    if (item.defaultUnit) {
+      setSatuan(item.defaultUnit);
+    }
   };
 
   // ====================================================
@@ -249,27 +383,186 @@ export default function TambahBahanModal() {
   };
 
   // ====================================================
+  // HELPER KONVERSI TANGGAL
+  // ====================================================
+
+  const ubahTanggalDatabase = (tanggal) => {
+    if (!tanggal) {
+      return null;
+    }
+
+    const bagian = tanggal.split("/");
+
+    if (bagian.length !== 3) {
+      throw new Error(
+        `Format tanggal "${tanggal}" harus DD/MM/YYYY`
+      );
+    }
+
+    const [hari, bulan, tahun] = bagian;
+
+    // Validasi sederhana
+    if (
+      !hari ||
+      !bulan ||
+      !tahun ||
+      tahun.length !== 4
+    ) {
+      throw new Error(
+        `Format tanggal "${tanggal}" harus DD/MM/YYYY`
+      );
+    }
+
+    return `${tahun}-${bulan}-${hari}`;
+  };
+
+  // ====================================================
   // SIMPAN
   // ====================================================
 
-  const handleSimpan = (e) => {
+  const handleSimpan = async (e) => {
     e.preventDefault();
 
-    if (!bahanTerpilih) return;
+    // Pastikan bahan sudah dipilih
+    if (!bahanTerpilih) {
+      setError(
+        "Silakan pilih bahan terlebih dahulu."
+      );
+      return;
+    }
 
-    const dataBahan = {
-      id: Date.now(),
-      nama: bahanTerpilih.nama,
-      kategori: bahanTerpilih.kategori,
-      jumlah,
-      satuan,
-      tanggalMasuk,
-      tanggalKadaluarsa,
-    };
+    // Pastikan jumlah valid
+    if (!jumlah || Number(jumlah) <= 0) {
+      setError(
+        "Jumlah bahan harus lebih dari 0."
+      );
+      return;
+    }
 
-    console.log("Data bahan:", dataBahan);
+    // Pastikan tanggal diisi
+    if (
+      !tanggalMasuk ||
+      !tanggalKadaluarsa
+    ) {
+      setError(
+        "Tanggal masuk dan tanggal kedaluwarsa wajib diisi."
+      );
+      return;
+    }
 
-    navigate("/stok");
+    try {
+      setSaving(true);
+      setError("");
+
+      // ==================================================
+      // AMBIL USER YANG SEDANG LOGIN
+      // ==================================================
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!user) {
+        setError(
+          "Silakan login terlebih dahulu."
+        );
+        return;
+      }
+
+      // ==================================================
+      // KONVERSI TANGGAL
+      // DD/MM/YYYY
+      // MENJADI
+      // YYYY-MM-DD
+      // ==================================================
+
+      const tanggalMasukDB =
+        ubahTanggalDatabase(tanggalMasuk);
+
+      const tanggalKadaluarsaDB =
+        ubahTanggalDatabase(
+          tanggalKadaluarsa
+        );
+
+      // ==================================================
+      // DATA YANG AKAN DISIMPAN
+      // ==================================================
+
+      const dataStok = {
+        user_id: user.id,
+
+        // FK ke ingredients_master.id
+        bahan_pangan_id:
+          bahanTerpilih.id,
+
+        jumlah: Number(jumlah),
+
+        satuan: satuan,
+
+        tanggal_masuk:
+          tanggalMasukDB,
+
+        tanggal_kadaluarsa:
+          tanggalKadaluarsaDB,
+      };
+
+      console.log(
+        "Data yang akan disimpan ke stok:",
+        dataStok
+      );
+
+      // ==================================================
+      // INSERT KE TABEL STOK
+      // ==================================================
+
+      const {
+        data,
+        error: insertError,
+      } = await supabase
+        .from("stok")
+        .insert(dataStok)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error(
+          "Supabase INSERT ERROR:",
+          insertError
+        );
+
+        throw insertError;
+      }
+
+      // ==================================================
+      // BERHASIL
+      // ==================================================
+
+      console.log(
+        "Stok berhasil disimpan:",
+        data
+      );
+
+      // Kembali ke halaman stok
+      navigate("/stok");
+
+    } catch (err) {
+      console.error(
+        "Gagal menyimpan stok:",
+        err
+      );
+
+      setError(
+        err?.message ||
+        "Gagal menyimpan bahan ke stok."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ====================================================
@@ -286,18 +579,41 @@ export default function TambahBahanModal() {
   };
 
   // ====================================================
+  // LOADING
+  // ====================================================
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f9f5] font-jakarta">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[#159b68]">
+          <Loader2
+            size={18}
+            className="animate-spin"
+          />
+
+          Memuat data bahan...
+        </div>
+      </div>
+    );
+  }
+
+  // ====================================================
   // RENDER
   // ====================================================
 
   return (
     <div className="min-h-screen bg-[#f5f9f5] font-jakarta text-[#24313d]">
+
       {/* CONTAINER DIBUAT LEBIH KECIL */}
+
       <div className="mx-auto min-h-screen w-full max-w-[460px] bg-[#f5f9f5]">
+
         {/* ==================================================
             HEADER
         ================================================== */}
 
         <header className="sticky top-0 z-30 flex h-[58px] items-center gap-2.5 border-b border-[#e6eee8] bg-[#f5f9f5]/95 px-3.5 backdrop-blur sm:h-[62px] sm:px-4">
+
           <button
             type="button"
             onClick={handleBack}
@@ -319,7 +635,18 @@ export default function TambahBahanModal() {
           <h1 className="text-xl font-bold text-[#24313d] sm:text-2xl">
             Tambah Bahan
           </h1>
+
         </header>
+
+        {/* ==================================================
+            ERROR
+        ================================================== */}
+
+        {error && (
+          <div className="mx-3.5 mt-3 rounded-[11px] border border-red-100 bg-red-50 px-3 py-2.5 text-xs text-red-600 sm:mx-4">
+            {error}
+          </div>
+        )}
 
         {/* ==================================================
             STEP 1 - PILIH BAHAN
@@ -327,9 +654,11 @@ export default function TambahBahanModal() {
 
         {step === 1 && (
           <main className="px-3.5 pb-7 pt-3 sm:px-4 sm:pt-3.5">
+
             {/* SEARCH */}
 
             <div className="relative">
+
               <Search
                 size={17}
                 className="
@@ -342,7 +671,9 @@ export default function TambahBahanModal() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
                 placeholder="Cari bahan..."
                 className="
                   h-10 w-full
@@ -364,7 +695,9 @@ export default function TambahBahanModal() {
               {search && (
                 <button
                   type="button"
-                  onClick={() => setSearch("")}
+                  onClick={() =>
+                    setSearch("")
+                  }
                   className="
                     absolute right-2.5 top-1/2
                     -translate-y-1/2
@@ -374,19 +707,28 @@ export default function TambahBahanModal() {
                   <XCircle size={16} />
                 </button>
               )}
+
             </div>
 
             {/* KATEGORI */}
 
             <div className="scrollbar-none mt-2.5 flex gap-1.5 overflow-x-auto pb-0.5">
+
               {kategoriData.map((item) => {
-                const aktif = kategoriAktif === item.nama;
+
+                const aktif =
+                  kategoriAktif ===
+                  item.nama;
 
                 return (
                   <button
                     key={item.nama}
                     type="button"
-                    onClick={() => setKategoriAktif(item.nama)}
+                    onClick={() =>
+                      setKategoriAktif(
+                        item.nama
+                      )
+                    }
                     className={`
                       shrink-0
                       rounded-full
@@ -405,7 +747,9 @@ export default function TambahBahanModal() {
                     {item.nama}
                   </button>
                 );
+
               })}
+
             </div>
 
             {/* ==================================================
@@ -413,91 +757,113 @@ export default function TambahBahanModal() {
             ================================================== */}
 
             <div className="mt-2.5 overflow-hidden rounded-[15px] border border-[#e3ebef] bg-white shadow-[0_1px_5px_rgba(30,50,40,0.03)]">
+
               {bahanFiltered.length > 0 ? (
-                bahanFiltered.map((item, index) => {
-                  const aktif =
-                    bahanTerpilih?.id === item.id;
 
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => pilihBahan(item)}
-                      className={`
-                        flex w-full items-center
-                        gap-2.5
-                        px-2.5
-                        py-2
-                        text-left
-                        transition
-                        sm:px-3
-                        ${
-                          index !==
-                          bahanFiltered.length - 1
-                            ? "border-b border-[#edf1f3]"
-                            : ""
+                bahanFiltered.map(
+                  (item, index) => {
+
+                    const aktif =
+                      bahanTerpilih?.id ===
+                      item.id;
+
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() =>
+                          pilihBahan(item)
                         }
-                        ${
-                          aktif
-                            ? "bg-[#effaf5]"
-                            : "bg-white hover:bg-[#fafcfb]"
-                        }
-                      `}
-                    >
-                      {/* GAMBAR LEBIH KECIL */}
+                        className={`
+                          flex w-full items-center
+                          gap-2.5
+                          px-2.5
+                          py-2
+                          text-left
+                          transition
+                          sm:px-3
+                          ${
+                            index !==
+                            bahanFiltered.length - 1
+                              ? "border-b border-[#edf1f3]"
+                              : ""
+                          }
+                          ${
+                            aktif
+                              ? "bg-[#effaf5]"
+                              : "bg-white hover:bg-[#fafcfb]"
+                          }
+                        `}
+                      >
 
-                      <img
-                        src={item.image}
-                        alt={item.nama}
-                        className="
-                          h-10 w-10
-                          shrink-0
-                          rounded-[10px]
-                          object-cover
-                          sm:h-11 sm:w-11
-                        "
-                      />
+                        {/* GAMBAR LEBIH KECIL */}
 
-                      {/* INFO */}
-
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold leading-tight text-[#273746] sm:text-base">
-                          {item.nama}
-                        </p>
-
-                        <p className="mt-0.5 text-xs leading-tight text-[#8293a0] sm:text-sm">
-                          {item.kategori}
-                        </p>
-                      </div>
-
-                      {/* ICON */}
-
-                      {aktif ? (
-                        <span className="
-                          flex h-5 w-5
-                          shrink-0
-                          items-center
-                          justify-center
-                          rounded-full
-                          bg-[#169b68]
-                          text-white
-                        ">
-                          <Check
-                            size={12}
-                            strokeWidth={3}
-                          />
-                        </span>
-                      ) : (
-                        <ChevronRight
-                          size={17}
-                          className="shrink-0 text-[#8b9cab]"
+                        <img
+                          src={item.image}
+                          alt={item.nama}
+                          className="
+                            h-10 w-10
+                            shrink-0
+                            rounded-[10px]
+                            object-cover
+                            sm:h-11 sm:w-11
+                          "
+                          onError={(e) => {
+                            e.currentTarget.src =
+                              "/image/placeholder.png";
+                          }}
                         />
-                      )}
-                    </button>
-                  );
-                })
+
+                        {/* INFO */}
+
+                        <div className="min-w-0 flex-1">
+
+                          <p className="truncate text-sm font-bold leading-tight text-[#273746] sm:text-base">
+                            {item.nama}
+                          </p>
+
+                          <p className="mt-0.5 text-xs leading-tight text-[#8293a0] sm:text-sm">
+                            {item.kategori}
+                          </p>
+
+                        </div>
+
+                        {/* ICON */}
+
+                        {aktif ? (
+                          <span
+                            className="
+                              flex h-5 w-5
+                              shrink-0
+                              items-center
+                              justify-center
+                              rounded-full
+                              bg-[#169b68]
+                              text-white
+                            "
+                          >
+                            <Check
+                              size={12}
+                              strokeWidth={3}
+                            />
+                          </span>
+                        ) : (
+                          <ChevronRight
+                            size={17}
+                            className="shrink-0 text-[#8b9cab]"
+                          />
+                        )}
+
+                      </button>
+                    );
+
+                  }
+                )
+
               ) : (
+
                 <div className="px-4 py-8 text-center">
+
                   <p className="text-sm font-semibold text-[#607382]">
                     Bahan tidak ditemukan
                   </p>
@@ -505,8 +871,11 @@ export default function TambahBahanModal() {
                   <p className="mt-1 text-xs text-[#95a3ae]">
                     Coba gunakan kata pencarian lain.
                   </p>
+
                 </div>
+
               )}
+
             </div>
 
             {/* ==================================================
@@ -535,6 +904,7 @@ export default function TambahBahanModal() {
             >
               Lanjut
             </button>
+
           </main>
         )}
 
@@ -542,149 +912,163 @@ export default function TambahBahanModal() {
             STEP 2 - DETAIL BAHAN
         ================================================== */}
 
-        {step === 2 && bahanTerpilih && (
-          <main className="px-3.5 pb-7 pt-3 sm:px-4 sm:pt-3.5">
-            {/* ==================================================
-                INFORMASI BAHAN
-            ================================================== */}
+        {step === 2 &&
+          bahanTerpilih && (
+            <main className="px-3.5 pb-7 pt-3 sm:px-4 sm:pt-3.5">
 
-            <section className="flex items-start gap-2.5">
-              <img
-                src={bahanTerpilih.image}
-                alt={bahanTerpilih.nama}
-                className="
-                  h-[68px]
-                  w-[86px]
-                  shrink-0
-                  rounded-xl
-                  object-cover
-                  sm:h-[74px]
-                  sm:w-[94px]
-                "
-              />
+              {/* ==================================================
+                  INFORMASI BAHAN
+              ================================================== */}
 
-              <div className="min-w-0 pt-0.5">
-                <h2 className="text-base font-bold leading-tight text-[#273746] sm:text-lg">
-                  {bahanTerpilih.nama}
-                </h2>
+              <section className="flex items-start gap-2.5">
 
-                <p className="mt-0.5 text-xs text-[#169b68] sm:text-sm">
-                  {bahanTerpilih.kategori}
-                </p>
-
-                <p className="mt-1 text-[11px] leading-snug text-[#758694] sm:text-xs">
-                  {bahanTerpilih.deskripsi}
-                </p>
-              </div>
-            </section>
-
-            {/* ==================================================
-                INFORMASI NUTRISI
-            ================================================== */}
-
-            <section className="mt-3.5 rounded-[14px] bg-[#eef9f4] p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-[#315264] sm:text-base">
-                  Informasi Nutrisi (per 100g)
-                </h3>
-
-                <ChevronRight
-                  size={17}
-                  className="text-[#169b68]"
-                />
-              </div>
-
-              <div className="mt-2.5 grid grid-cols-5 gap-0.5">
-                <NutrisiItem
-                  icon={<Leaf size={14} />}
-                  label="Kalori"
-                  value={bahanTerpilih.nutrisi.kalori}
+                <img
+                  src={bahanTerpilih.image}
+                  alt={bahanTerpilih.nama}
+                  className="
+                    h-[68px]
+                    w-[86px]
+                    shrink-0
+                    rounded-xl
+                    object-cover
+                    sm:h-[74px]
+                    sm:w-[94px]
+                  "
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      "/image/placeholder.png";
+                  }}
                 />
 
-                <NutrisiItem
-                  icon={<Beef size={14} />}
-                  label="Protein"
-                  value={bahanTerpilih.nutrisi.protein}
-                />
+                <div className="min-w-0 pt-0.5">
 
-                <NutrisiItem
-                  icon={<Milk size={14} />}
-                  label="Lemak"
-                  value={bahanTerpilih.nutrisi.lemak}
-                />
+                  <h2 className="text-base font-bold leading-tight text-[#273746] sm:text-lg">
+                    {bahanTerpilih.nama}
+                  </h2>
 
-                <NutrisiItem
-                  icon={<Wheat size={14} />}
-                  label="Karbohidrat"
-                  value={
-                    bahanTerpilih.nutrisi.karbohidrat
-                  }
-                />
+                  <p className="mt-0.5 text-xs text-[#169b68] sm:text-sm">
+                    {bahanTerpilih.kategori}
+                  </p>
 
-                <NutrisiItem
-                  icon={<Leaf size={14} />}
-                  label="Serat"
-                  value={bahanTerpilih.nutrisi.serat}
-                />
-              </div>
-            </section>
+                  <p className="mt-1 text-[11px] leading-snug text-[#758694] sm:text-xs">
+                    {bahanTerpilih.deskripsi}
+                  </p>
 
-            {/* ==================================================
-                FORM
-            ================================================== */}
+                </div>
 
-            <form
-              onSubmit={handleSimpan}
-              className="mt-4"
-            >
-              {/* JUMLAH */}
+              </section>
 
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
-                  Jumlah
-                </label>
+              {/* ==================================================
+                  INFORMASI NUTRISI
+              ================================================== */}
 
-                <div className="flex gap-1.5">
-                  <input
-                    type="number"
-                    min="1"
-                    value={jumlah}
-                    onChange={(e) =>
-                      setJumlah(e.target.value)
-                    }
-                    className="
-                      h-10
-                      min-w-0
-                      flex-1
-                      rounded-[10px]
-                      border border-[#dce6eb]
-                      bg-white
-                      px-3
-                      text-sm
-                      text-[#24313d]
-                      outline-none
-                      focus:border-[#159b68]
-                      focus:ring-2
-                      focus:ring-[#159b68]/10
-                    "
-                    required
+              <section className="mt-3.5 rounded-[14px] bg-[#eef9f4] p-3">
+
+                <div className="flex items-center justify-between">
+
+                  <h3 className="text-sm font-bold text-[#315264] sm:text-base">
+                    Informasi Nutrisi (per 100g)
+                  </h3>
+
+                  <ChevronRight
+                    size={17}
+                    className="text-[#169b68]"
                   />
 
-                  <div className="relative w-[105px] shrink-0 sm:w-[115px]">
-                    <select
-                      value={satuan}
+                </div>
+
+                <div className="mt-2.5 grid grid-cols-5 gap-0.5">
+
+                  <NutrisiItem
+                    icon={<Leaf size={14} />}
+                    label="Kalori"
+                    value={
+                      bahanTerpilih
+                        .nutrisi
+                        .kalori
+                    }
+                  />
+
+                  <NutrisiItem
+                    icon={<Beef size={14} />}
+                    label="Protein"
+                    value={
+                      bahanTerpilih
+                        .nutrisi
+                        .protein
+                    }
+                  />
+
+                  <NutrisiItem
+                    icon={<Milk size={14} />}
+                    label="Lemak"
+                    value={
+                      bahanTerpilih
+                        .nutrisi
+                        .lemak
+                    }
+                  />
+
+                  <NutrisiItem
+                    icon={<Wheat size={14} />}
+                    label="Karbohidrat"
+                    value={
+                      bahanTerpilih
+                        .nutrisi
+                        .karbohidrat
+                    }
+                  />
+
+                  <NutrisiItem
+                    icon={<Leaf size={14} />}
+                    label="Serat"
+                    value={
+                      bahanTerpilih
+                        .nutrisi
+                        .serat
+                    }
+                  />
+
+                </div>
+
+              </section>
+
+              {/* ==================================================
+                  FORM
+              ================================================== */}
+
+              <form
+                onSubmit={handleSimpan}
+                className="mt-4"
+              >
+
+                {/* JUMLAH */}
+
+                <div>
+
+                  <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
+                    Jumlah
+                  </label>
+
+                  <div className="flex gap-1.5">
+
+                    <input
+                      type="number"
+                      min="1"
+                      value={jumlah}
                       onChange={(e) =>
-                        setSatuan(e.target.value)
+                        setJumlah(
+                          e.target.value
+                        )
                       }
                       className="
                         h-10
-                        w-full
-                        appearance-none
+                        min-w-0
+                        flex-1
                         rounded-[10px]
                         border border-[#dce6eb]
                         bg-white
                         px-3
-                        pr-8
                         text-sm
                         text-[#24313d]
                         outline-none
@@ -692,145 +1076,230 @@ export default function TambahBahanModal() {
                         focus:ring-2
                         focus:ring-[#159b68]/10
                       "
-                    >
-                      <option value="gram">gram</option>
-                      <option value="kg">kg</option>
-                      <option value="ml">ml</option>
-                      <option value="liter">liter</option>
-                      <option value="butir">butir</option>
-                      <option value="pcs">pcs</option>
-                    </select>
+                      required
+                    />
 
-                    <ChevronDown
-                      size={15}
+                    <div className="relative w-[105px] shrink-0 sm:w-[115px]">
+
+                      <select
+                        value={satuan}
+                        onChange={(e) =>
+                          setSatuan(
+                            e.target.value
+                          )
+                        }
+                        className="
+                          h-10
+                          w-full
+                          appearance-none
+                          rounded-[10px]
+                          border border-[#dce6eb]
+                          bg-white
+                          px-3
+                          pr-8
+                          text-sm
+                          text-[#24313d]
+                          outline-none
+                          focus:border-[#159b68]
+                          focus:ring-2
+                          focus:ring-[#159b68]/10
+                        "
+                      >
+
+                        <option value="gram">
+                          gram
+                        </option>
+
+                        <option value="kg">
+                          kg
+                        </option>
+
+                        <option value="ml">
+                          ml
+                        </option>
+
+                        <option value="liter">
+                          liter
+                        </option>
+
+                        <option value="butir">
+                          butir
+                        </option>
+
+                        <option value="pcs">
+                          pcs
+                        </option>
+
+                      </select>
+
+                      <ChevronDown
+                        size={15}
+                        className="
+                          pointer-events-none
+                          absolute right-2.5
+                          top-1/2
+                          -translate-y-1/2
+                          text-[#758694]
+                        "
+                      />
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* TANGGAL MASUK */}
+
+                <div className="mt-3">
+
+                  <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
+                    Tanggal Masuk
+                  </label>
+
+                  <div className="relative">
+
+                    <input
+                      type="text"
+                      value={tanggalMasuk}
+                      onChange={(e) =>
+                        setTanggalMasuk(
+                          e.target.value
+                        )
+                      }
+                      placeholder="DD/MM/YYYY"
+                      className="
+                        h-10
+                        w-full
+                        rounded-[10px]
+                        border border-[#dce6eb]
+                        bg-white
+                        px-3
+                        pr-10
+                        text-sm
+                        text-[#24313d]
+                        outline-none
+                        focus:border-[#159b68]
+                        focus:ring-2
+                        focus:ring-[#159b68]/10
+                      "
+                      required
+                    />
+
+                    <CalendarDays
+                      size={16}
                       className="
                         pointer-events-none
-                        absolute right-2.5
+                        absolute right-3
                         top-1/2
                         -translate-y-1/2
-                        text-[#758694]
+                        text-[#64798a]
                       "
                     />
+
                   </div>
+
                 </div>
-              </div>
 
-              {/* TANGGAL MASUK */}
+                {/* TANGGAL KADALUARSA */}
 
-              <div className="mt-3">
-                <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
-                  Tanggal Masuk
-                </label>
+                <div className="mt-3">
 
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={tanggalMasuk}
-                    onChange={(e) =>
-                      setTanggalMasuk(e.target.value)
-                    }
-                    placeholder="DD/MM/YYYY"
-                    className="
-                      h-10
-                      w-full
-                      rounded-[10px]
-                      border border-[#dce6eb]
-                      bg-white
-                      px-3
-                      pr-10
-                      text-sm
-                      text-[#24313d]
-                      outline-none
-                      focus:border-[#159b68]
-                      focus:ring-2
-                      focus:ring-[#159b68]/10
-                    "
-                    required
-                  />
+                  <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
+                    Tanggal Kedaluwarsa
+                  </label>
 
-                  <CalendarDays
-                    size={16}
-                    className="
-                      pointer-events-none
-                      absolute right-3
-                      top-1/2
-                      -translate-y-1/2
-                      text-[#64798a]
-                    "
-                  />
+                  <div className="relative">
+
+                    <input
+                      type="text"
+                      value={
+                        tanggalKadaluarsa
+                      }
+                      onChange={(e) =>
+                        setTanggalKadaluarsa(
+                          e.target.value
+                        )
+                      }
+                      placeholder="DD/MM/YYYY"
+                      className="
+                        h-10
+                        w-full
+                        rounded-[10px]
+                        border border-[#dce6eb]
+                        bg-white
+                        px-3
+                        pr-10
+                        text-sm
+                        text-[#24313d]
+                        outline-none
+                        focus:border-[#159b68]
+                        focus:ring-2
+                        focus:ring-[#159b68]/10
+                      "
+                      required
+                    />
+
+                    <CalendarDays
+                      size={16}
+                      className="
+                        pointer-events-none
+                        absolute right-3
+                        top-1/2
+                        -translate-y-1/2
+                        text-[#64798a]
+                      "
+                    />
+
+                  </div>
+
                 </div>
-              </div>
 
-              {/* TANGGAL KADALUARSA */}
+                {/* SIMPAN */}
 
-              <div className="mt-3">
-                <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
-                  Tanggal Kedaluwarsa
-                </label>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="
+                    mt-4
+                    flex
+                    h-10
+                    w-full
+                    items-center
+                    justify-center
+                    gap-2
+                    rounded-[10px]
+                    bg-[#159b68]
+                    text-xs
+                    font-bold
+                    text-white
+                    shadow-sm
+                    transition
+                    hover:bg-[#11895b]
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
+                    sm:text-sm
+                  "
+                >
+                  {saving ? (
+                    <>
+                      <Loader2
+                        size={16}
+                        className="animate-spin"
+                      />
 
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={tanggalKadaluarsa}
-                    onChange={(e) =>
-                      setTanggalKadaluarsa(e.target.value)
-                    }
-                    placeholder="DD/MM/YYYY"
-                    className="
-                      h-10
-                      w-full
-                      rounded-[10px]
-                      border border-[#dce6eb]
-                      bg-white
-                      px-3
-                      pr-10
-                      text-sm
-                      text-[#24313d]
-                      outline-none
-                      focus:border-[#159b68]
-                      focus:ring-2
-                      focus:ring-[#159b68]/10
-                    "
-                    required
-                  />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    "Simpan"
+                  )}
+                </button>
 
-                  <CalendarDays
-                    size={16}
-                    className="
-                      pointer-events-none
-                      absolute right-3
-                      top-1/2
-                      -translate-y-1/2
-                      text-[#64798a]
-                    "
-                  />
-                </div>
-              </div>
+              </form>
 
-              {/* SIMPAN */}
+            </main>
+          )}
 
-              <button
-                type="submit"
-                className="
-                  mt-4
-                  h-10
-                  w-full
-                  rounded-[10px]
-                  bg-[#159b68]
-                  text-xs
-                  font-bold
-                  text-white
-                  shadow-sm
-                  transition
-                  hover:bg-[#11895b]
-                  sm:text-sm
-                "
-              >
-                Simpan
-              </button>
-            </form>
-          </main>
-        )}
       </div>
     </div>
   );
@@ -840,9 +1309,14 @@ export default function TambahBahanModal() {
 // KOMPONEN NUTRISI
 // ======================================================
 
-function NutrisiItem({ icon, label, value }) {
+function NutrisiItem({
+  icon,
+  label,
+  value,
+}) {
   return (
     <div className="flex min-w-0 flex-col items-center text-center">
+
       <div className="flex h-6 w-6 items-center justify-center text-[#169b68]">
         {icon}
       </div>
@@ -854,6 +1328,7 @@ function NutrisiItem({ icon, label, value }) {
       <p className="mt-0.5 truncate text-[10px] font-bold text-[#47616d] sm:text-xs">
         {value}
       </p>
+
     </div>
   );
 }

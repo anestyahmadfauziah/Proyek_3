@@ -9,6 +9,9 @@ import {
   LoaderCircle,
   Plus,
   Ruler,
+  Bell,
+  UserCircle,
+  RefreshCw,
   Scale,
   Save,
   UserRound,
@@ -40,8 +43,8 @@ const initialGrowth = {
 };
 
 const inputClass =
-  "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100";
-const labelClass = "block text-sm font-semibold text-slate-700";
+  "mt-1.5 w-full rounded-2xl border border-[#d9e6dc] bg-[#fbfdfb] px-4 py-3 text-sm text-[#16241a] outline-none transition placeholder:text-slate-400 focus:border-[#2fa356] focus:bg-white focus:ring-4 focus:ring-[#2fa356]/15";
+const labelClass = "block text-sm font-semibold text-[#2c4a34]";
 
 function Field({ label, children, hint }) {
   return (
@@ -56,7 +59,7 @@ function Field({ label, children, hint }) {
 function Modal({ title, onClose, children }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[#0b2412]/55 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -64,11 +67,11 @@ function Modal({ title, onClose, children }) {
       <section
         role="dialog"
         aria-modal="true"
-        className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7"
+        className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-[28px] bg-white p-6 shadow-[0_40px_80px_-20px_rgba(11,36,18,0.55)] ring-1 ring-[#14301b]/5 sm:rounded-[28px] sm:p-8"
       >
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="text-xl font-bold">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Tutup">
+          <h2 className="font-sans text-2xl font-semibold tracking-tight text-[#0f3d1e]">{title}</h2>
+          <button type="button" onClick={onClose} aria-label="Tutup" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eef5ef] text-[#3a5a42] transition hover:bg-[#e0ece3]">
             <X />
           </button>
         </div>
@@ -80,12 +83,12 @@ function Modal({ title, onClose, children }) {
 
 function Info({ label, value, icon }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-4">
-      <div className="flex items-center gap-2 text-green-700">
+    <div className="rounded-2xl border border-[#e8efe9] bg-gradient-to-b from-white to-[#f6faf7] p-4">
+      <div className="flex items-center gap-2 text-[#176b26]">
         {icon}
         <span className="text-xs font-semibold text-slate-500">{label}</span>
       </div>
-      <p className="mt-2 break-words text-sm font-bold">{value || "Belum diisi"}</p>
+      <p className="mt-2 break-words text-sm font-bold text-[#16241a]">{value || "Belum diisi"}</p>
     </div>
   );
 }
@@ -486,24 +489,24 @@ export default function SiKecil() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f9f5]">
-        <LoaderCircle className="mr-3 animate-spin" /> Memuat data 1000 HPK...
+      <div className="flex min-h-screen items-center justify-center bg-[#eef5ef] bg-[image:radial-gradient(900px_480px_at_90%_-8%,#d8eedd_0%,transparent_60%),radial-gradient(700px_420px_at_-10%_35%,#f7f0d8_0%,transparent_55%)] bg-no-repeat font-sans text-sm font-medium text-[#3a5a42]">
+        <LoaderCircle className="mr-3 animate-spin text-[#176b26]" /> Memuat data 1000 HPK...
       </div>
     );
   }
 
   if (!user) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f5f9f5] p-5">
-        <section className="max-w-md rounded-3xl bg-white p-8 text-center shadow-sm">
-          <Baby size={40} className="mx-auto text-green-700" />
-          <h1 className="mt-4 text-2xl font-bold">Pantau 1000 HPK</h1>
-          <p className="mt-2 text-sm text-slate-500">
+      <main className="flex min-h-screen items-center justify-center bg-[#eef5ef] bg-[image:radial-gradient(900px_480px_at_90%_-8%,#d8eedd_0%,transparent_60%),radial-gradient(700px_420px_at_-10%_35%,#f7f0d8_0%,transparent_55%)] bg-no-repeat p-5 font-sans">
+        <section className="max-w-md text-center rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-8 sm:p-10">
+          <Baby size={40} className="mx-auto box-content rounded-3xl p-4 bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] text-[#176b26] ring-1 ring-white shadow-sm" />
+          <h1 className="mt-6 font-sans text-2xl font-semibold tracking-tight text-[#0f3d1e]">Pantau 1000 HPK</h1>
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">
             Masuk untuk mendaftarkan kehamilan dan memantau pertumbuhan anak.
           </p>
           <button
             onClick={() => navigate("/login")}
-            className="mt-5 w-full rounded-xl bg-[#23652d] px-4 py-3 font-semibold text-white"
+            className="mt-7 w-full rounded-2xl px-4 py-3.5 bg-[#0f3d1e] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
           >
             Masuk
           </button>
@@ -522,48 +525,96 @@ export default function SiKecil() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#f5f9f5] font-jakarta text-slate-800">
+    <div className="min-h-screen bg-[#eef5ef] bg-[image:radial-gradient(900px_480px_at_90%_-8%,#d8eedd_0%,transparent_60%),radial-gradient(700px_420px_at_-10%_35%,#f7f0d8_0%,transparent_55%)] bg-no-repeat font-sans text-[#16241a]">
       
       
-<header className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur">
-  <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
-    <button
-      type="button"
-      onClick={() => navigate("/dashboard")}
-      className="flex items-center gap-2 rounded-lg text-sm font-semibold text-slate-600 transition hover:text-green-700"
-    >
-      <ArrowLeft size={19} />
-    </button>
+<header className="sticky top-0 z-30 border-b border-[#14301b]/5 bg-white/70 backdrop-blur-xl">
+  <div className="mx-auto flex min-h-[64px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+
+    {/* Kiri: Kembali dan judul */}
+    <div className="flex min-w-0 items-center gap-3">
+      <button
+        type="button"
+        onClick={() => navigate("/dashboard")}
+        aria-label="Kembali ke Dashboard"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#0f3d1e] ring-1 ring-[#14301b]/10 transition hover:bg-[#f1f7f2] hover:shadow-sm"
+      >
+        <ArrowLeft size={19} />
+      </button>
+
+      <div className="min-w-0">
+        <h1 className="truncate text-lg font-extrabold tracking-tight text-[#0f3d1e] sm:text-2xl">
+          Si Kecil
+        </h1>
+      </div>
+    </div>
+
+    {/* Kanan: Notifikasi, profil, refresh */}
+    <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+      <button
+        type="button"
+        onClick={() => navigate("/notifikasi")}
+        aria-label="Notifikasi"
+        title="Notifikasi"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-[#3a5a42] transition hover:bg-[#e6efe8] sm:h-10 sm:w-10"
+      >
+        <Bell size={19} />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => navigate("/profil")}
+        aria-label="Profil"
+        title="Profil"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] text-[#0f3d1e] shadow-sm ring-1 ring-white transition hover:shadow-md sm:h-10 sm:w-10"
+      >
+        <UserCircle size={21} />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => reload()}
+        disabled={loading}
+        aria-label="Muat ulang data"
+        title="Muat ulang data"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-[#3a5a42] transition hover:bg-[#e6efe8] disabled:opacity-50 sm:h-10 sm:w-10"
+      >
+        <RefreshCw
+          size={17}
+          className={loading ? "animate-spin" : ""}
+        />
+      </button>
+    </div>
   </div>
 </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <section className="rounded-3xl bg-gradient-to-r from-[#23652d] to-[#39874a] p-6 text-white sm:p-8">
-          <p className="text-sm text-green-100">Dapur Cerdas · 1000 HPK</p>
-          <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
+      <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+        <section className="relative overflow-hidden rounded-[28px] bg-[#0f3d1e] bg-[image:radial-gradient(560px_300px_at_100%_0%,rgba(226,170,60,0.30),transparent_60%),radial-gradient(520px_340px_at_0%_100%,rgba(70,176,106,0.40),transparent_60%),linear-gradient(135deg,#0f3d1e_0%,#17612d_100%)] p-6 text-white shadow-[0_30px_60px_-28px_rgba(15,61,30,0.75)] ring-1 ring-white/10 sm:p-10">
+          <p className="text-sm font-medium text-white/70">Dapur Cerdas · 1000 HPK</p>
+          <h1 className="mt-3 font-sans text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
             Pantau Perjalanan 1000 HPK
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-green-50">
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-white/75 sm:text-base sm:leading-7">
             Mulai dari kehamilan ibu, pencatatan kelahiran, hingga pemantauan
             pertumbuhan anak.
           </p>
         </section>
 
         {error && (
-          <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div role="alert" className="mt-5 rounded-2xl border border-red-200/70 bg-red-50/90 p-4 text-sm text-red-700 shadow-sm">
             {error}
           </div>
         )}
         {success && (
-          <div role="status" className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+          <div role="status" className="mt-5 rounded-2xl border border-[#bfe3c9] bg-[#effaf1] p-4 text-sm text-[#176b26] shadow-sm">
             {success}
           </div>
         )}
 
-        <section className="mt-6 rounded-3xl bg-white p-5 shadow-sm sm:p-7">
+        <section className="mt-6 rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-xl font-bold">Profil Ibu</h2>
+              <h2 className="font-sans text-2xl font-semibold tracking-tight text-[#0f3d1e]">Profil Ibu</h2>
               <p className="mt-1 text-sm text-slate-500">
                 Data ibu menjadi induk dari setiap pendaftaran kehamilan.
               </p>
@@ -573,27 +624,27 @@ export default function SiKecil() {
                 setFormIbu({ nama_ibu: ibu?.nama_ibu || "" });
                 setModalIbu(true);
               }}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-green-200 px-4 py-3 text-sm font-semibold text-green-800"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm border border-[#cfe4d2] bg-white font-semibold text-[#0f3d1e] shadow-sm transition hover:bg-[#f3faf4] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
             >
               <UserRound size={17} /> {ibu ? "Edit Profil Ibu" : "Daftar Profil Ibu"}
             </button>
           </div>
           {ibu ? (
-            <div className="mt-4 rounded-2xl bg-green-50 p-4">
-              <p className="text-xs text-green-800">Nama ibu</p>
-              <p className="mt-1 font-bold text-green-950">{ibu.nama_ibu}</p>
+            <div className="mt-5 rounded-2xl border border-[#dcebdf] bg-gradient-to-br from-[#f3faf4] to-[#e8f4eb] p-5">
+              <p className="text-xs font-medium text-[#3a5a42]">Nama ibu</p>
+              <p className="mt-1 font-sans text-xl font-semibold text-[#0f3d1e]">{ibu.nama_ibu}</p>
             </div>
           ) : (
-            <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
+            <p className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] text-sm text-slate-500 p-5">
               Isi profil ibu terlebih dahulu sebelum mendaftarkan kehamilan.
             </p>
           )}
         </section>
 
-        <section className="mt-6 rounded-3xl bg-white p-5 shadow-sm sm:p-7">
+        <section className="mt-6 rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-6 sm:p-8">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-xl font-bold">Data Kehamilan</h2>
+              <h2 className="font-sans text-2xl font-semibold tracking-tight text-[#0f3d1e]">Data Kehamilan</h2>
               <p className="mt-1 text-sm text-slate-500">
                 Pilih kehamilan atau daftarkan kehamilan baru.
               </p>
@@ -604,7 +655,7 @@ export default function SiKecil() {
                 setFormHamil(initialHamil);
                 setModalHamil(true);
               }}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#23652d] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm disabled:opacity-40 disabled:shadow-none bg-[#0f3d1e] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
             >
               <Plus size={18} /> Daftar Kehamilan
             </button>
@@ -628,9 +679,9 @@ export default function SiKecil() {
           )}
 
           {!selectedPregnancy ? (
-            <div className="mt-5 rounded-2xl bg-slate-50 p-7 text-center">
-              <CalendarDays className="mx-auto text-green-700" size={32} />
-              <p className="mt-3 font-semibold">Belum ada data kehamilan</p>
+            <div className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] p-8 text-center">
+              <CalendarDays className="mx-auto box-content rounded-3xl p-4 bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] text-[#176b26] ring-1 ring-white shadow-sm" size={32} />
+              <p className="mt-3 font-semibold text-[#0f3d1e]">Belum ada data kehamilan</p>
               <p className="mt-1 text-sm text-slate-500">
                 Daftarkan kehamilan agar pemantauan bisa dimulai.
               </p>
@@ -638,7 +689,7 @@ export default function SiKecil() {
           ) : (
             <>
               <div className="mt-5 flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-800">
+                <span className="rounded-full bg-[#e6f4e8] px-3.5 py-1 text-xs font-semibold text-[#176b26] ring-1 ring-[#cfe4d2]">
                   Status: {selectedPregnancy.status}
                 </span>
                 {selectedPregnancy.status === "hamil" && (
@@ -650,7 +701,7 @@ export default function SiKecil() {
                       });
                       setModalLahir(true);
                     }}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#23652d] px-4 py-2.5 text-sm font-semibold text-white"
+                    className="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm bg-[#0f3d1e] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
                   >
                     <Baby size={17} /> Catat Kelahiran
                   </button>
@@ -664,12 +715,12 @@ export default function SiKecil() {
               </div>
 
               {selectedPregnancy.status === "hamil" && (
-                <div className="mt-4 rounded-2xl bg-green-50 p-5">
-                  <p className="text-sm font-semibold text-green-900">
+                <div className="mt-5 rounded-2xl border border-[#dcebdf] bg-gradient-to-br from-[#f3faf4] to-[#e4f3e8] p-6">
+                  <p className="text-sm font-semibold text-[#0f3d1e]">
                     Perkiraan usia kehamilan
                   </p>
                   {weeks !== null && daysPregnancy >= 0 ? (
-                    <p className="mt-2 text-2xl font-bold text-green-900">
+                    <p className="mt-2 font-sans text-4xl font-semibold lining-nums tracking-tight text-[#0f3d1e]">
                       {weeks} minggu {daysInWeek} hari
                     </p>
                   ) : (
@@ -677,7 +728,7 @@ export default function SiKecil() {
                       Belum dapat dihitung dari HPHT.
                     </p>
                   )}
-                  <p className="mt-2 text-xs leading-5 text-green-900">
+                  <p className="mt-2 text-xs leading-5 text-[#0f3d1e]">
                     Perhitungan berdasarkan HPHT merupakan perkiraan, bukan
                     penentuan medis usia kehamilan.
                   </p>
@@ -687,8 +738,8 @@ export default function SiKecil() {
           )}
         </section>
 
-        <section className="mt-6 rounded-3xl bg-white p-5 shadow-sm sm:p-7">
-          <h2 className="text-xl font-bold">Profil Anak</h2>
+        <section className="mt-6 rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-6 sm:p-8">
+          <h2 className="font-sans text-2xl font-semibold tracking-tight text-[#0f3d1e]">Profil Anak</h2>
           <p className="mt-1 text-sm text-slate-500">
             Profil anak dibuat saat data kelahiran dicatat.
           </p>
@@ -722,23 +773,23 @@ export default function SiKecil() {
                   {selectedChild.tanggal_lahir && (() => {
                     const childDays = hitungHari(selectedChild.tanggal_lahir);
                     return (
-                      <div className="mt-4 rounded-2xl bg-green-50 p-5">
-                        <p className="font-semibold text-green-900">Perjalanan 1000 HPK setelah lahir</p>
-                        <p className="mt-2 text-2xl font-bold text-green-900">
+                      <div className="mt-5 rounded-2xl border border-[#dcebdf] bg-gradient-to-br from-[#f3faf4] to-[#e4f3e8] p-6">
+                        <p className="font-semibold text-[#0f3d1e]">Perjalanan 1000 HPK setelah lahir</p>
+                        <p className="mt-2 font-sans text-4xl font-semibold lining-nums tracking-tight text-[#0f3d1e]">
                           Hari ke-{Math.min(childDays + 1, 1000)} dari 1000
                         </p>
-                        <p className="mt-1 text-sm text-green-900">
+                        <p className="mt-1 text-sm text-[#0f3d1e]">
                           {childDays < 1000
                             ? `Sekitar ${1000 - childDays - 1} hari tersisa sampai hari ke-1000.`
                             : "Periode 1000 hari setelah lahir telah terlewati."}
                         </p>
-                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                        <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white shadow-inner ring-1 ring-[#14301b]/5">
                           <div
-                            className="h-full rounded-full bg-green-700"
+                            className="h-full rounded-full bg-gradient-to-r from-[#1f8a43] to-[#7bd08f] transition-all duration-700"
                             style={{ width: `${Math.min(100, ((childDays + 1) / 1000) * 100)}%` }}
                           />
                         </div>
-                        <p className="mt-2 text-xs text-green-900">
+                        <p className="mt-2 text-xs text-[#0f3d1e]">
                           Ini penghitung hari setelah lahir. Periode 1000 HPK
                           secara keseluruhan dimulai sejak masa kehamilan.
                         </p>
@@ -752,7 +803,7 @@ export default function SiKecil() {
                 <div className="mt-6">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
-                      <h3 className="text-lg font-bold">Riwayat Pertumbuhan</h3>
+                      <h3 className="font-sans text-xl font-semibold tracking-tight text-[#0f3d1e]">Riwayat Pertumbuhan</h3>
                       <p className="text-sm text-slate-500">
                         {pengukuran.length} catatan pengukuran
                       </p>
@@ -762,34 +813,34 @@ export default function SiKecil() {
                         setFormGrowth({ ...initialGrowth, tanggal_pengukuran: today() });
                         setModalGrowth(true);
                       }}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#23652d] px-4 py-3 text-sm font-semibold text-white"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm bg-[#0f3d1e] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
                     >
                       <Plus size={17} /> Catat Pengukuran
                     </button>
                   </div>
 
                   {pengukuran.length === 0 ? (
-                    <p className="mt-4 rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">
+                    <p className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] text-sm text-slate-500 p-6">
                       Belum ada pengukuran tersimpan.
                     </p>
                   ) : (
                     <div className="mt-4 overflow-x-auto">
                       <table className="w-full min-w-[570px] text-left text-sm">
                         <thead>
-                          <tr className="border-b text-slate-500">
-                            <th className="px-3 py-3">Tanggal</th>
-                            <th className="px-3 py-3">Berat</th>
-                            <th className="px-3 py-3">Panjang/tinggi</th>
-                            <th className="px-3 py-3">Lingkar kepala</th>
+                          <tr className="border-b border-[#e8efe9] bg-[#f3f8f4] text-slate-500">
+                            <th className="px-4 py-3.5 text-xs font-semibold">Tanggal</th>
+                            <th className="px-4 py-3.5 text-xs font-semibold">Berat</th>
+                            <th className="px-4 py-3.5 text-xs font-semibold">Panjang/tinggi</th>
+                            <th className="px-4 py-3.5 text-xs font-semibold">Lingkar kepala</th>
                           </tr>
                         </thead>
                         <tbody>
                           {pengukuran.map((r) => (
-                            <tr key={r.id} className="border-b border-slate-50">
-                              <td className="px-3 py-3">{formatTanggal(r.tanggal_pengukuran)}</td>
-                              <td className="px-3 py-3">{r.berat_kg != null ? `${r.berat_kg} kg` : "—"}</td>
-                              <td className="px-3 py-3">{r.panjang_tinggi_cm != null ? `${r.panjang_tinggi_cm} cm` : "—"}</td>
-                              <td className="px-3 py-3">{r.lingkar_kepala_cm != null ? `${r.lingkar_kepala_cm} cm` : "—"}</td>
+                            <tr key={r.id} className="border-b border-[#e8efe9] transition-colors last:border-b-0 hover:bg-[#f6faf7]">
+                              <td className="px-4 py-3.5 tabular-nums">{formatTanggal(r.tanggal_pengukuran)}</td>
+                              <td className="px-4 py-3.5 tabular-nums">{r.berat_kg != null ? `${r.berat_kg} kg` : "—"}</td>
+                              <td className="px-4 py-3.5 tabular-nums">{r.panjang_tinggi_cm != null ? `${r.panjang_tinggi_cm} cm` : "—"}</td>
+                              <td className="px-4 py-3.5 tabular-nums">{r.lingkar_kepala_cm != null ? `${r.lingkar_kepala_cm} cm` : "—"}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -800,7 +851,7 @@ export default function SiKecil() {
               )}
             </>
           ) : (
-            <p className="mt-4 rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">
+            <p className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] text-sm text-slate-500 p-6">
               Belum ada profil anak. Setelah bayi lahir, pilih kehamilan lalu
               tekan “Catat Kelahiran”.
             </p>
@@ -829,8 +880,8 @@ export default function SiKecil() {
               />
             </Field>
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => setModalIbu(false)} className="rounded-xl border px-4 py-3 text-sm">Batal</button>
-              <button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-[#23652d] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+              <button type="button" onClick={() => setModalIbu(false)} className="rounded-2xl border border-[#cfe4d2] bg-white px-5 py-3 text-sm font-semibold text-[#3a5a42] transition hover:bg-[#f3faf4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]">Batal</button>
+              <button disabled={saving} className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm disabled:opacity-50 disabled:shadow-none bg-[#0f3d1e] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]">
                 {saving ? <LoaderCircle className="animate-spin" size={17} /> : <Save size={17} />}
                 Simpan
               </button>
@@ -875,8 +926,8 @@ export default function SiKecil() {
               />
             </Field>
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => setModalHamil(false)} className="rounded-xl border px-4 py-3 text-sm">Batal</button>
-              <button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-[#23652d] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+              <button type="button" onClick={() => setModalHamil(false)} className="rounded-2xl border border-[#cfe4d2] bg-white px-5 py-3 text-sm font-semibold text-[#3a5a42] transition hover:bg-[#f3faf4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]">Batal</button>
+              <button disabled={saving} className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm disabled:opacity-50 disabled:shadow-none bg-[#0f3d1e] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]">
                 {saving ? <LoaderCircle className="animate-spin" size={17} /> : <Save size={17} />}
                 Simpan Kehamilan
               </button>
@@ -934,8 +985,8 @@ export default function SiKecil() {
               dengan kehamilan ini.
             </p>
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => setModalLahir(false)} className="rounded-xl border px-4 py-3 text-sm">Batal</button>
-              <button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-[#23652d] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+              <button type="button" onClick={() => setModalLahir(false)} className="rounded-2xl border border-[#cfe4d2] bg-white px-5 py-3 text-sm font-semibold text-[#3a5a42] transition hover:bg-[#f3faf4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]">Batal</button>
+              <button disabled={saving} className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm disabled:opacity-50 disabled:shadow-none bg-[#0f3d1e] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]">
                 {saving ? <LoaderCircle className="animate-spin" size={17} /> : <Save size={17} />}
                 Simpan Kelahiran
               </button>
@@ -965,8 +1016,8 @@ export default function SiKecil() {
               <textarea rows={3} className={inputClass} value={formGrowth.catatan} onChange={(e) => setFormGrowth((v) => ({ ...v, catatan: e.target.value }))} />
             </Field>
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => setModalGrowth(false)} className="rounded-xl border px-4 py-3 text-sm">Batal</button>
-              <button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-[#23652d] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
+              <button type="button" onClick={() => setModalGrowth(false)} className="rounded-2xl border border-[#cfe4d2] bg-white px-5 py-3 text-sm font-semibold text-[#3a5a42] transition hover:bg-[#f3faf4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]">Batal</button>
+              <button disabled={saving} className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm disabled:opacity-50 disabled:shadow-none bg-[#0f3d1e] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]">
                 {saving ? <LoaderCircle className="animate-spin" size={17} /> : <Save size={17} />}
                 Simpan Pengukuran
               </button>

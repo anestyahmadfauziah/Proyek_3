@@ -10,6 +10,7 @@ import SiKecil from "./pages/SiKecil";
 import Nutrisi from "./pages/Nutrisi";
 import TambahBahanModal from "./pages/TambahBahanModal";
 import RacikResepAI from "./pages/RacikResepAI";
+import ResepTersimpan from "./pages/ResepTersimpan";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
   <Route path="/tambah-bahan" element={<TambahBahanModal />} />
   <Route path="/racik-resep" element={<RacikResepAI />} />
   <Route path="/splash" element={<Splash />} />
+  <Route path="/racik-resep/tersimpan" element={<ResepTersimpan />} />
 
   </Routes>
     </BrowserRouter>

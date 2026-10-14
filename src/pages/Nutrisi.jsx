@@ -1,8 +1,6 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-
 import {
   ArrowLeft,
   Bell,
@@ -22,14 +20,13 @@ import {
 } from "lucide-react";
 
 const CHILD_STORAGE_KEY = "dapurCerdasSelectedChildId";
-
 const NUTRISI = [
   {
     nama: "Kalori",
     key: "kalori",
     satuan: "kkal",
     icon: Flame,
-    iconBg: "bg-[#fff0df]",
+    iconBg: "bg-gradient-to-br from-[#fff4e2] to-[#ffe1b5] ring-1 ring-white shadow-sm",
     iconColor: "text-[#e88b00]",
   },
   {
@@ -37,7 +34,7 @@ const NUTRISI = [
     key: "protein",
     satuan: "g",
     icon: Beef,
-    iconBg: "bg-[#ffe1e1]",
+    iconBg: "bg-gradient-to-br from-[#ffeceb] to-[#ffd0d0] ring-1 ring-white shadow-sm",
     iconColor: "text-[#bd3838]",
   },
   {
@@ -45,7 +42,7 @@ const NUTRISI = [
     key: "karbohidrat",
     satuan: "g",
     icon: Wheat,
-    iconBg: "bg-[#fff1bf]",
+    iconBg: "bg-gradient-to-br from-[#fff6d2] to-[#ffe795] ring-1 ring-white shadow-sm",
     iconColor: "text-[#c18a00]",
   },
   {
@@ -53,7 +50,7 @@ const NUTRISI = [
     key: "lemak",
     satuan: "g",
     icon: Droplets,
-    iconBg: "bg-[#dceeff]",
+    iconBg: "bg-gradient-to-br from-[#e6f3ff] to-[#c8e2fb] ring-1 ring-white shadow-sm",
     iconColor: "text-[#3b78ae]",
   },
   {
@@ -61,7 +58,7 @@ const NUTRISI = [
     key: "serat",
     satuan: "g",
     icon: Apple,
-    iconBg: "bg-[#dcf7e3]",
+    iconBg: "bg-gradient-to-br from-[#e6f9ea] to-[#c4efd0] ring-1 ring-white shadow-sm",
     iconColor: "text-[#2d813a]",
   },
 ];
@@ -113,6 +110,7 @@ const formatTanggal = (date) =>
   ].join("-");
 
 const parseTanggal = (value) => {
+
   if (!value) return null;
 
   const [tahun, bulan, hari] = String(value)
@@ -123,13 +121,12 @@ const parseTanggal = (value) => {
   if (!tahun || !bulan || !hari) return null;
 
   const tanggal = new Date(tahun, bulan - 1, hari);
-
   return Number.isNaN(tanggal.getTime()) ? null : tanggal;
 };
 
 const formatTanggalIndonesia = (tanggal) => {
-  if (!tanggal) return "-";
 
+  if (!tanggal) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -143,11 +140,13 @@ const formatAngka = (nilai, digit = 1) =>
   }).format(Number.isFinite(Number(nilai)) ? Number(nilai) : 0);
 
 const angka = (nilai) => {
+
   const hasil = Number(nilai);
   return Number.isFinite(hasil) ? hasil : 0;
 };
 
 const hitungUmurBulan = (tanggalLahir, tanggalAcuan = new Date()) => {
+
   const lahir = parseTanggal(tanggalLahir);
 
   if (!lahir || lahir > tanggalAcuan) return null;
@@ -157,11 +156,11 @@ const hitungUmurBulan = (tanggalLahir, tanggalAcuan = new Date()) => {
     (tanggalAcuan.getMonth() - lahir.getMonth());
 
   if (tanggalAcuan.getDate() < lahir.getDate()) bulan--;
-
   return Math.max(0, bulan);
 };
 
 const hitungUmurHari = (tanggalLahir, tanggalAcuan = new Date()) => {
+
   const lahir = parseTanggal(tanggalLahir);
 
   if (!lahir || lahir > tanggalAcuan) return null;
@@ -177,16 +176,17 @@ const hitungUmurHari = (tanggalLahir, tanggalAcuan = new Date()) => {
     tanggalAcuan.getMonth(),
     tanggalAcuan.getDate()
   );
-
   return Math.floor((akhir - awal) / 86400000);
 };
 
 const hitungUmur = (tanggalLahir) => {
+
   const bulan = hitungUmurBulan(tanggalLahir);
 
   if (bulan === null) return "Umur belum tersedia";
 
   const tahun = Math.floor(bulan / 12);
+
   const sisaBulan = bulan % 12;
 
   if (tahun > 0) {
@@ -194,11 +194,11 @@ const hitungUmur = (tanggalLahir) => {
       ? `${tahun} tahun ${sisaBulan} bulan`
       : `${tahun} tahun`;
   }
-
   return `${bulan} bulan`;
 };
 
 const dapatkanAcuanAkg = (tanggalLahir) => {
+
   const umurBulan = hitungUmurBulan(tanggalLahir);
 
   if (umurBulan === null) return null;
@@ -229,14 +229,14 @@ const jumlahkanNutrisi = (daftar) =>
   );
 
 const BUAT_RENTANG_TANGGAL = (awal, akhir) => {
-  const hasil = [];
-  const tanggal = new Date(awal);
 
+  const hasil = [];
+
+  const tanggal = new Date(awal);
   while (tanggal <= akhir) {
     hasil.push(new Date(tanggal));
     tanggal.setDate(tanggal.getDate() + 1);
   }
-
   return hasil;
 };
 
@@ -248,20 +248,31 @@ const STATUS_KEHAMILAN_AKTIF = [
 ];
 
 function Nutrisi() {
+
   const navigate = useNavigate();
 
   const [tabAktif, setTabAktif] = useState("Harian");
+
   const [user, setUser] = useState(null);
+
   const [profilIbu, setProfilIbu] = useState(null);
+
   const [anak, setAnak] = useState(null);
+
   const [daftarAnak, setDaftarAnak] = useState([]);
+
   const [childId, setChildId] = useState("");
+
   const [kehamilanTerkait, setKehamilanTerkait] = useState(null);
+
   const [modeNutrisi, setModeNutrisi] = useState("anak");
 
   const [catatanMakanan, setCatatanMakanan] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [memuatMakanan, setMemuatMakanan] = useState(false);
+
   const [error, setError] = useState("");
 
   const [hariIni, setHariIni] = useState(() => new Date());
@@ -295,11 +306,8 @@ function Nutrisi() {
   const muatProfil = useCallback(async () => {
     const { data: authData, error: authError } =
       await supabase.auth.getUser();
-
     if (authError) throw authError;
-
     const pengguna = authData?.user;
-
     if (!pengguna) {
       setUser(null);
       setProfilIbu(null);
@@ -311,23 +319,17 @@ function Nutrisi() {
       setModeNutrisi("anak");
       return;
     }
-
     setUser(pengguna);
-
     // Profil ibu boleh belum tersedia.
     const { data: ibu, error: ibuError } = await supabase
       .from("maternal_profiles")
       .select("id, user_id, nama_ibu")
       .eq("user_id", pengguna.id)
       .maybeSingle();
-
     if (ibuError) throw ibuError;
-
     setProfilIbu(ibu || null);
-
     // Ambil riwayat kehamilan milik ibu.
     let daftarKehamilan = [];
-
     if (ibu?.id) {
       const { data, error: pregnancyError } = await supabase
         .from("pregnancies")
@@ -336,12 +338,9 @@ function Nutrisi() {
         )
         .eq("mother_id", ibu.id)
         .order("created_at", { ascending: false });
-
       if (pregnancyError) throw pregnancyError;
-
       daftarKehamilan = data || [];
     }
-
     // Ambil profil anak.
     const { data: profiles, error: profileError } = await supabase
       .from("children_profiles")
@@ -350,30 +349,23 @@ function Nutrisi() {
       )
       .eq("user_id", pengguna.id)
       .order("created_at", { ascending: true });
-
     if (profileError) throw profileError;
-
     const profilAnak = profiles || [];
-
     setDaftarAnak(profilAnak);
-
-    // Periksa apakah ada kehamilan yang masih berlangsung.
+    // Prioritas 1: kehamilan aktif -> pantau nutrisi ibu hamil.
     const kehamilanAktif = daftarKehamilan.find((item) =>
       STATUS_KEHAMILAN_AKTIF.includes(
         String(item.status || "").toLowerCase().trim()
       )
     );
-
     if (kehamilanAktif) {
       setModeNutrisi("ibu");
       setKehamilanTerkait(kehamilanAktif);
       setAnak(null);
       setChildId("");
-      setCatatanMakanan([]);
       return;
     }
-
-    // Tidak hamil aktif dan belum ada anak.
+    // Belum ada kehamilan aktif dan belum ada profil anak.
     if (profilAnak.length === 0) {
       setModeNutrisi("anak");
       setAnak(null);
@@ -382,49 +374,48 @@ function Nutrisi() {
       setCatatanMakanan([]);
       return;
     }
-
-    // Pilih anak yang sebelumnya disimpan, jika masih tersedia.
+    // Gunakan anak yang tersimpan, atau anak pertama jika belum dipilih.
     let idTersimpan = "";
-
     try {
-      idTersimpan =
-        window.localStorage.getItem(CHILD_STORAGE_KEY) || "";
+      idTersimpan = window.localStorage.getItem(CHILD_STORAGE_KEY) || "";
     } catch {
       idTersimpan = "";
     }
-
     const anakTerpilih =
-      profilAnak.find((item) => item.id === idTersimpan) ||
+      profilAnak.find((item) => String(item.id) === String(idTersimpan)) ||
       profilAnak[0];
-
-    setModeNutrisi("anak");
     setAnak(anakTerpilih);
     setChildId(anakTerpilih.id);
-
     try {
-      window.localStorage.setItem(
-        CHILD_STORAGE_KEY,
-        anakTerpilih.id
-      );
+      window.localStorage.setItem(CHILD_STORAGE_KEY, anakTerpilih.id);
     } catch {
-      // Tetap berfungsi jika localStorage tidak tersedia.
+      // Aplikasi tetap berjalan jika localStorage tidak tersedia.
     }
-
-    // Ambil kehamilan yang terkait dengan anak.
+    // Ambil kehamilan yang terkait dengan anak untuk catatan nutrisi ibu.
+    let pregnancyTerkait = null;
     if (anakTerpilih.pregnancy_id) {
-      const { data: pregnancy, error: pregnancyError } =
-        await supabase
-          .from("pregnancies")
-          .select("id, hpht, hpl, tanggal_persalinan, status")
-          .eq("id", anakTerpilih.pregnancy_id)
-          .maybeSingle();
-
+      const { data: pregnancy, error: pregnancyError } = await supabase
+        .from("pregnancies")
+        .select("id, hpht, hpl, tanggal_persalinan, status")
+        .eq("id", anakTerpilih.pregnancy_id)
+        .maybeSingle();
       if (pregnancyError) throw pregnancyError;
-
-      setKehamilanTerkait(pregnancy || null);
-    } else {
-      setKehamilanTerkait(null);
+      pregnancyTerkait = pregnancy || null;
     }
+    setKehamilanTerkait(pregnancyTerkait);
+    // Usia 0–5 bulan: fokus Nutrisi adalah makanan ibu menyusui.
+    // Mulai usia 6 bulan: fokus beralih ke catatan MP-ASI anak.
+    const umurBulan = hitungUmurBulan(anakTerpilih.tanggal_lahir);
+    const ibuMenyusui =
+      umurBulan !== null &&
+      umurBulan < 6 &&
+      Boolean(pregnancyTerkait?.id);
+    setModeNutrisi(ibuMenyusui ? "menyusui" : "anak");
+
+    // Catatan makanan sengaja TIDAK dikosongkan di sini.
+    // Pemuatan catatan ditangani useEffect di bawah. Mengosongkannya di sini
+    // membuat data yang sudah termuat hilang saat muatProfil dipanggil ulang
+    // (misalnya oleh onAuthStateChange).
   }, []);
 
   /*
@@ -435,55 +426,39 @@ function Nutrisi() {
    */
   const muatCatatanMakanan = useCallback(
     async (idRelasi, mode = "anak") => {
-      if (!idRelasi) {
-        setCatatanMakanan([]);
-        return;
-      }
+      if (!idRelasi) return [];
 
-      setMemuatMakanan(true);
+      const enamHariLalu = new Date(hariIni);
+      enamHariLalu.setDate(enamHariLalu.getDate() - 6);
 
-      try {
-        const enamHariLalu = new Date(hariIni);
-        enamHariLalu.setDate(enamHariLalu.getDate() - 6);
+      const mulai = enamHariLalu < awalBulan ? enamHariLalu : awalBulan;
+      const tabel = mode !== "anak" ? "maternal_food_logs" : "food_logs";
+      const kolomRelasi = mode !== "anak" ? "pregnancy_id" : "child_id";
+      const kolomSelect =
+        mode !== "anak"
+          ? "id, pregnancy_id, nama_makanan, tanggal_konsumsi, waktu_makan, porsi, kalori_kcal, protein_g, karbohidrat_g, lemak_g, serat_g, created_at"
+          : "id, child_id, nama_makanan, tanggal_konsumsi, waktu_makan, porsi, kalori_kcal, protein_g, karbohidrat_g, lemak_g, serat_g, created_at";
 
-        const mulai =
-          enamHariLalu < awalBulan
-            ? enamHariLalu
-            : awalBulan;
+      const { data, error: foodError } = await supabase
+        .from(tabel)
+        .select(kolomSelect)
+        .eq(kolomRelasi, idRelasi)
+        .gte("tanggal_konsumsi", formatTanggal(mulai))
+        .lte("tanggal_konsumsi", formatTanggal(akhirBulan))
+        .order("tanggal_konsumsi", { ascending: true });
 
-        const tabel =
-          mode === "ibu" ? "maternal_food_logs" : "food_logs";
+      if (foodError) throw foodError;
 
-        const kolomRelasi =
-          mode === "ibu" ? "pregnancy_id" : "child_id";
-
-        const kolomSelect =
-          mode === "ibu"
-            ? "id, pregnancy_id, nama_makanan, tanggal_konsumsi, waktu_makan, porsi, kalori_kcal, protein_g, karbohidrat_g, lemak_g, serat_g, created_at"
-            : "id, child_id, nama_makanan, tanggal_konsumsi, waktu_makan, porsi, kalori_kcal, protein_g, karbohidrat_g, lemak_g, serat_g, created_at";
-
-        const { data, error: foodError } = await supabase
-          .from(tabel)
-          .select(kolomSelect)
-          .eq(kolomRelasi, idRelasi)
-          .gte("tanggal_konsumsi", formatTanggal(mulai))
-          .lte("tanggal_konsumsi", formatTanggal(akhirBulan))
-          .order("tanggal_konsumsi", { ascending: true });
-
-        if (foodError) throw foodError;
-
-        setCatatanMakanan(data || []);
-      } finally {
-        setMemuatMakanan(false);
-      }
+      return data || [];
     },
     [hariIni, awalBulan, akhirBulan]
   );
 
-  const muatSemua = useCallback(async () => {
-    setLoading(true);
+  const muatSemua = useCallback(async (senyap = false) => {
+    // Spinner layar penuh hanya untuk pemuatan pertama / klik muat ulang.
+    // Pemuatan ulang dari event auth berjalan senyap supaya UI tidak hilang.
+    if (!senyap) setLoading(true);
     setError("");
-
     try {
       await muatProfil();
     } catch (err) {
@@ -499,38 +474,40 @@ function Nutrisi() {
 
   useEffect(() => {
     muatSemua();
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
       // Hindari menjalankan permintaan Supabase di callback auth secara langsung.
-      Promise.resolve().then(() => muatSemua());
+      Promise.resolve().then(() => muatSemua(true));
     });
-
     return () => subscription.unsubscribe();
   }, [muatSemua]);
 
   useEffect(() => {
     const idRelasi =
-      modeNutrisi === "ibu" ? kehamilanTerkait?.id : childId;
-
+      modeNutrisi !== "anak" ? kehamilanTerkait?.id : childId;
     if (!idRelasi) {
       setCatatanMakanan([]);
+      setMemuatMakanan(false);
       return;
     }
-
     let masihAktif = true;
-
-    muatCatatanMakanan(idRelasi, modeNutrisi).catch((err) => {
-      if (!masihAktif) return;
-
-      console.error("Gagal memuat catatan nutrisi:", err);
-      setError(
-        err.message ||
-          "Catatan nutrisi gagal dimuat. Periksa tabel dan kebijakan RLS."
-      );
-    });
-
+    setMemuatMakanan(true);
+    muatCatatanMakanan(idRelasi, modeNutrisi)
+      .then((data) => {
+        if (masihAktif) setCatatanMakanan(data);
+      })
+      .catch((err) => {
+        if (!masihAktif) return;
+        console.error("Gagal memuat catatan nutrisi:", err);
+        setError(
+          err.message ||
+            "Catatan nutrisi gagal dimuat. Periksa tabel dan kebijakan RLS."
+        );
+      })
+      .finally(() => {
+        if (masihAktif) setMemuatMakanan(false);
+      });
     return () => {
       masihAktif = false;
     };
@@ -542,36 +519,39 @@ function Nutrisi() {
   ]);
 
   const pilihAnak = async (id) => {
-    const pilihan = daftarAnak.find((item) => item.id === id);
+    const pilihan = daftarAnak.find((item) => String(item.id) === String(id));
     if (!pilihan) return;
-
-    setModeNutrisi("anak");
     setAnak(pilihan);
-    setChildId(id);
+    setChildId(pilihan.id);
     setError("");
-
+    setCatatanMakanan([]);
     try {
-      window.localStorage.setItem(CHILD_STORAGE_KEY, id);
+      window.localStorage.setItem(CHILD_STORAGE_KEY, pilihan.id);
     } catch {
       // Tidak wajib.
     }
-
+    let pregnancyTerkait = null;
     if (pilihan.pregnancy_id) {
       const { data, error: pregnancyError } = await supabase
         .from("pregnancies")
         .select("id, hpht, hpl, tanggal_persalinan, status")
         .eq("id", pilihan.pregnancy_id)
         .maybeSingle();
-
       if (pregnancyError) {
         setError(pregnancyError.message);
+        setModeNutrisi("anak");
+        setKehamilanTerkait(null);
         return;
       }
-
-      setKehamilanTerkait(data || null);
-    } else {
-      setKehamilanTerkait(null);
+      pregnancyTerkait = data || null;
     }
+    setKehamilanTerkait(pregnancyTerkait);
+    const umurBulan = hitungUmurBulan(pilihan.tanggal_lahir);
+    const ibuMenyusui =
+      umurBulan !== null &&
+      umurBulan < 6 &&
+      Boolean(pregnancyTerkait?.id);
+    setModeNutrisi(ibuMenyusui ? "menyusui" : "anak");
   };
 
   // TOTAL HARIAN
@@ -618,11 +598,9 @@ function Nutrisi() {
     () =>
       BUAT_RENTANG_TANGGAL(awalMinggu, hariIni).map((tanggal) => {
         const tanggalKey = formatTanggal(tanggal);
-
         const daftar = catatanMakanan.filter(
           (item) => item.tanggal_konsumsi === tanggalKey
         );
-
         return {
           tanggal: tanggalKey,
           hari: new Intl.DateTimeFormat("id-ID", {
@@ -639,29 +617,24 @@ function Nutrisi() {
 
   const dataBulanan = useMemo(() => {
     const jumlahMinggu = Math.ceil(akhirBulan.getDate() / 7);
-
     return Array.from({ length: jumlahMinggu }, (_, index) => {
       const hariAwal = index * 7 + 1;
       const hariAkhir = Math.min(
         hariAwal + 6,
         akhirBulan.getDate()
       );
-
       const daftar = catatanMakanan.filter((item) => {
         const tanggal = parseTanggal(item.tanggal_konsumsi);
-
         return (
           tanggal &&
           tanggal.getDate() >= hariAwal &&
           tanggal.getDate() <= hariAkhir
         );
       });
-
       const total = jumlahkanNutrisi(daftar);
       const jumlahHari = new Set(
         daftar.map((item) => item.tanggal_konsumsi)
       ).size;
-
       return {
         nama: `M${index + 1}`,
         rentang: `${hariAwal}–${hariAkhir}`,
@@ -680,9 +653,13 @@ function Nutrisi() {
 
   // DATA ANAK DAN 1000 HPK
   const namaAnak = anak?.nama || "Si Kecil";
+
   const umurAnak = hitungUmur(anak?.tanggal_lahir);
+
   const umurBulanAnak = hitungUmurBulan(anak?.tanggal_lahir);
+
   const umurHariAnak = hitungUmurHari(anak?.tanggal_lahir);
+
   const acuanAkgAnak = dapatkanAcuanAkg(anak?.tanggal_lahir);
 
   const hphtTersedia = Boolean(
@@ -780,13 +757,13 @@ function Nutrisi() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#eaf8ec] font-jakarta">
+      <div className="flex min-h-screen items-center justify-center bg-[#eef5ef] bg-[image:radial-gradient(900px_480px_at_90%_-8%,#d8eedd_0%,transparent_60%),radial-gradient(700px_420px_at_-10%_35%,#f7f0d8_0%,transparent_55%)] bg-no-repeat font-sans">
         <div className="text-center">
           <RefreshCw
-            className="mx-auto animate-spin text-[#23652d]"
+            className="mx-auto animate-spin text-[#176b26]"
             size={30}
           />
-          <p className="mt-3 text-sm font-semibold text-[#23652d]">
+          <p className="mt-4 text-sm font-medium tracking-wide text-[#3a5a42]">
             Memuat data nutrisi...
           </p>
         </div>
@@ -796,21 +773,21 @@ function Nutrisi() {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#eaf8ec] px-4 font-jakarta">
-        <section className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-sm">
+      <div className="flex min-h-screen items-center justify-center bg-[#eef5ef] bg-[image:radial-gradient(900px_480px_at_90%_-8%,#d8eedd_0%,transparent_60%),radial-gradient(700px_420px_at_-10%_35%,#f7f0d8_0%,transparent_55%)] bg-no-repeat px-4 font-sans">
+        <section className="w-full max-w-md text-center rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-8 sm:p-10">
           <UserCircle
-            className="mx-auto text-[#23652d]"
+            className="mx-auto box-content rounded-full bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] p-3 text-[#176b26] ring-1 ring-white shadow-sm"
             size={42}
           />
-          <h1 className="mt-3 text-xl font-extrabold text-[#23652d]">
+          <h1 className="mt-5 font-sans text-2xl font-semibold tracking-tight text-[#0f3d1e]">
             Masuk terlebih dahulu
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">
             Masuk ke akun Dapur Cerdas untuk melihat data nutrisi.
           </p>
           <button
             onClick={() => navigate("/login")}
-            className="mt-5 w-full rounded-xl bg-[#176b26] px-4 py-3 text-sm font-bold text-white hover:bg-[#12551f]"
+            className="mt-7 w-full rounded-2xl px-4 py-3.5 text-sm font-semibold bg-[#0f3d1e] text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
           >
             Masuk
           </button>
@@ -821,47 +798,44 @@ function Nutrisi() {
 
   // HEADER DIPAKAI OLEH MODE IBU DAN ANAK
   const Header = ({ judul }) => (
-    <header className="sticky top-0 z-50 border-b border-[#d9eadb] bg-[#eaf8ec]/95 backdrop-blur-md">
-      <div className="mx-auto flex min-h-[60px] w-full max-w-[1500px] items-center justify-between gap-3 px-4 sm:min-h-[64px] sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-[#14301b]/5 bg-white/70 backdrop-blur-xl">
+      <div className="mx-auto flex min-h-[60px] w-full max-w-[1240px] items-center justify-between gap-3 px-4 sm:min-h-[64px] sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-white/70 sm:h-10 sm:w-10"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#0f3d1e] ring-1 ring-[#14301b]/10 transition hover:bg-[#f1f7f2] hover:shadow-sm sm:h-10 sm:w-10"
             aria-label="Kembali"
           >
             <ArrowLeft size={21} />
           </button>
-          <h1 className="truncate font-playfair text-xl font-bold text-[#23652d] sm:text-2xl">
+          <h1 className="truncate font-sans text-xl font-semibold tracking-tight text-[#0f3d1e] sm:text-2xl">
             {judul}
           </h1>
         </div>
-
         <div className="flex items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={() => navigate("/notifikasi")}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-600 hover:bg-white/70 sm:h-10 sm:w-10"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[#3a5a42] transition hover:bg-[#e6efe8] sm:h-10 sm:w-10"
             aria-label="Notifikasi"
           >
             <Bell size={19} />
           </button>
-
           <button
             type="button"
             onClick={() => navigate("/profil")}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#176324] hover:bg-[#e0f1e3] sm:h-10 sm:w-10"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] text-[#0f3d1e] shadow-sm ring-1 ring-white transition hover:shadow-md sm:h-10 sm:w-10"
             aria-label="Profil"
           >
             <UserCircle size={21} />
           </button>
-
           <button
             type="button"
             onClick={() => {
               muatSemua();
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#23652d] hover:bg-white/70"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[#3a5a42] transition hover:bg-[#e6efe8]"
             aria-label="Muat ulang data"
             title="Muat ulang data"
           >
@@ -874,7 +848,7 @@ function Nutrisi() {
 
   const ErrorBanner = () =>
     error ? (
-      <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-200/70 bg-red-50/90 p-4 text-sm text-red-700 shadow-sm">
         <AlertCircle className="mt-0.5 shrink-0" size={19} />
         <div className="min-w-0 flex-1">
           <p className="font-bold">Ada masalah saat memuat data</p>
@@ -893,16 +867,16 @@ function Nutrisi() {
     ) : null;
 
   const TabNavigasi = () => (
-    <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+    <div className="mt-5 grid grid-cols-3 gap-1 rounded-2xl bg-[#e6efe8] p-1.5 ring-1 ring-[#14301b]/5 sm:gap-1.5">
       {["Harian", "Mingguan", "Tren Bulanan"].map((tab) => (
         <button
           key={tab}
           type="button"
           onClick={() => setTabAktif(tab)}
-          className={`rounded-[14px] px-2 py-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${
+          className={`rounded-xl px-2 py-2.5 text-xs font-semibold transition duration-200 sm:px-3 sm:text-sm ${
             tabAktif === tab
-              ? "bg-[#176b26] text-white shadow-sm"
-              : "bg-white text-[#286432] hover:bg-slate-50"
+              ? "bg-[#0f3d1e] text-white shadow-[0_6px_16px_-6px_rgba(15,61,30,0.75)]"
+              : "text-[#3a5a42] hover:bg-white/70"
           }`}
         >
           {tab}
@@ -912,10 +886,9 @@ function Nutrisi() {
   );
 
   const KartuSemuaNutrisi = ({ periode }) => (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {NUTRISI.map((item) => {
         const Icon = item.icon;
-
         return (
           <NutritionCard
             key={item.key}
@@ -933,81 +906,83 @@ function Nutrisi() {
   );
 
   // MODE IBU HAMIL
-  if (modeNutrisi === "ibu" && kehamilanTerkait) {
+  if ((modeNutrisi === "ibu" || modeNutrisi === "menyusui") && kehamilanTerkait) {
     return (
-      <div className="min-h-screen overflow-x-hidden bg-[#eaf8ec] font-jakarta text-[#202833]">
-        <Header judul="Nutrisi Ibu" />
-
-        <main className="mx-auto w-full max-w-[1500px] px-4 pb-10 pt-4 sm:px-6 sm:pt-5 lg:px-8">
+      <div className="min-h-screen overflow-x-hidden bg-[#eef5ef] bg-[image:radial-gradient(900px_480px_at_90%_-8%,#d8eedd_0%,transparent_60%),radial-gradient(700px_420px_at_-10%_35%,#f7f0d8_0%,transparent_55%)] bg-no-repeat font-sans text-[#16241a]">
+        <Header judul={modeNutrisi === "menyusui" ? "Nutrisi Ibu Menyusui" : "Nutrisi Ibu"} />
+        <main className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-5 sm:px-6 sm:pt-6 lg:px-8">
           <ErrorBanner />
-
-          <section className="rounded-[20px] bg-gradient-to-br from-[#1f742b] to-[#2d8b37] p-4 text-white shadow-sm sm:p-6">
-            <h2 className="text-lg font-extrabold sm:text-2xl">
-              Pemantauan Nutrisi Ibu
+          <section className="relative overflow-hidden rounded-[28px] bg-[#0f3d1e] bg-[image:radial-gradient(560px_300px_at_100%_0%,rgba(226,170,60,0.30),transparent_60%),radial-gradient(520px_340px_at_0%_100%,rgba(70,176,106,0.40),transparent_60%),linear-gradient(135deg,#0f3d1e_0%,#17612d_100%)] p-6 text-white shadow-[0_30px_60px_-28px_rgba(15,61,30,0.75)] ring-1 ring-white/10 sm:p-8">
+            <h2 className="font-sans text-2xl font-semibold tracking-tight sm:text-3xl">
+              {modeNutrisi === "menyusui"
+                ? "Pemantauan Nutrisi Ibu Menyusui"
+                : "Pemantauan Nutrisi Ibu"}
             </h2>
-
             <div className="mt-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 backdrop-blur">
                 <UserCircle size={27} />
               </div>
               <div>
-                <p className="font-extrabold">{namaIbu}</p>
+                <p className="text-lg font-semibold">{namaIbu}</p>
                 <p className="mt-1 text-xs text-white/80 sm:text-sm">
-                  Catatan makanan selama kehamilan
+                  {modeNutrisi === "menyusui"
+                    ? "Catatan makanan ibu selama masa menyusui"
+                    : "Catatan makanan selama kehamilan"}
                 </p>
               </div>
             </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-xl bg-white/15 p-3">
-                <p className="text-xs text-white/80">Usia kehamilan</p>
-                <p className="mt-1 text-lg font-extrabold">
-                  {mingguKehamilan === null
-                    ? "Belum diketahui"
-                    : `${mingguKehamilan} minggu ${hariKehamilan % 7} hari`}
-                </p>
+            {modeNutrisi === "menyusui" ? (
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm">
+                  <p className="text-xs font-medium text-white/65">Nama anak</p>
+                  <p className="mt-1 font-sans text-xl font-semibold">{anak?.nama || "Si Kecil"}</p>
+                </div>
+                <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm">
+                  <p className="text-xs font-medium text-white/65">Usia anak</p>
+                  <p className="mt-1 font-sans text-xl font-semibold">{hitungUmur(anak?.tanggal_lahir)}</p>
+                </div>
               </div>
-
-              <div className="rounded-xl bg-white/15 p-3">
-                <p className="text-xs text-white/80">
-                  Tahap kehamilan
-                </p>
-                <p className="mt-1 text-lg font-extrabold">
-                  {trimester}
-                </p>
+            ) : (
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm">
+                  <p className="text-xs font-medium text-white/65">Usia kehamilan</p>
+                  <p className="mt-1 font-sans text-xl font-semibold">
+                    {mingguKehamilan === null
+                      ? "Belum diketahui"
+                      : `${mingguKehamilan} minggu ${hariKehamilan % 7} hari`}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm">
+                  <p className="text-xs font-medium text-white/65">Tahap kehamilan</p>
+                  <p className="mt-1 font-sans text-xl font-semibold">{trimester}</p>
+                </div>
               </div>
-            </div>
-
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#286432]">
+            )}
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/95 px-3.5 py-1.5 text-xs font-semibold text-[#0f3d1e] shadow-sm">
               <CalendarDays size={16} />
               Hari ini: {formatTanggalIndonesia(hariIni)}
             </div>
-
-            <p className="mt-3 text-xs leading-relaxed text-white/85 sm:text-sm">
-              HPL: {formatTanggalIndonesia(
-                parseTanggal(kehamilanTerkait.hpl)
-              )}. Ringkasan berikut hanya berdasarkan makanan yang
-              dicatat, bukan seluruh asupan harian.
+            <p className="mt-4 max-w-2xl text-xs leading-relaxed text-white/75 sm:text-sm">
+              {modeNutrisi === "menyusui"
+                ? "Pemantauan ini mencatat makanan ibu selama menyusui, bukan menghitung seluruh asupan ASI yang diterima bayi. Pertumbuhan anak tetap dipantau di halaman Si Kecil."
+                : `HPL: ${formatTanggalIndonesia(parseTanggal(kehamilanTerkait.hpl))}. Ringkasan hanya berdasarkan makanan yang dicatat, bukan seluruh asupan harian.`}
             </p>
           </section>
-
-          <section className="mt-4 rounded-[20px] border border-[#d7ead9] bg-white p-4 shadow-sm sm:p-5">
+          <section className="mt-5 rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff1d8] text-[#a86400]">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#fff4dc] to-[#ffe3a8] text-[#9a5b00] ring-1 ring-white shadow-sm">
                 <TrendingUp size={20} />
               </div>
               <div>
-                <h2 className="text-sm font-extrabold text-[#245c2c] sm:text-base">
-                  Ringkasan Asupan Ibu
+                <h2 className="text-sm font-bold tracking-tight text-[#0f3d1e] sm:text-base">
+                  {modeNutrisi === "menyusui" ? "Ringkasan Asupan Ibu Menyusui" : "Ringkasan Asupan Ibu"}
                 </h2>
                 <p className="mt-1 text-xs text-slate-500 sm:text-sm">
                   Data dibaca dari tabel maternal_food_logs.
                 </p>
               </div>
             </div>
-
             <TabNavigasi />
-
             <div className="mt-4">
               <p className="text-xs text-slate-500">
                 {tabAktif === "Harian"
@@ -1020,7 +995,6 @@ function Nutrisi() {
                       }).format(hariIni)}
               </p>
             </div>
-
             {memuatMakanan ? (
               <p className="mt-4 text-sm text-slate-500">
                 Memuat catatan makanan...
@@ -1039,29 +1013,27 @@ function Nutrisi() {
               </div>
             )}
           </section>
-
-          <section className="mt-4 rounded-[20px] border border-[#d7ead9] bg-white p-4 shadow-sm sm:p-5">
+          <section className="mt-5 rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#e1f8e5] text-[#238039]">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] text-[#176b26] ring-1 ring-white shadow-sm">
                 <Utensils size={20} />
               </div>
               <div>
-                <h2 className="text-sm font-extrabold sm:text-base">
-                  Catatan Makanan Ibu
+                <h2 className="text-sm font-bold tracking-tight text-[#0f3d1e] sm:text-base">
+                  {modeNutrisi === "menyusui" ? "Catatan Makanan Ibu Menyusui" : "Catatan Makanan Ibu"}
                 </h2>
                 <p className="mt-1 text-xs text-slate-500 sm:text-sm">
                   Daftar makanan pada tanggal yang dipilih.
                 </p>
               </div>
             </div>
-
             {memuatMakanan ? (
               <p className="mt-4 text-sm text-slate-500">
                 Memuat data...
               </p>
             ) : makananHariIni.length === 0 ? (
-              <div className="mt-4 rounded-xl bg-[#f6faf6] p-4 text-center">
-                <p className="text-sm font-bold text-[#286432]">
+              <div className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] p-6 text-center">
+                <p className="text-sm font-semibold text-[#0f3d1e]">
                   Belum ada catatan makanan hari ini
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500">
@@ -1077,16 +1049,16 @@ function Nutrisi() {
               </div>
             )}
           </section>
-
           <InsightBox
             title="Informasi kebutuhan gizi"
-            text="Kebutuhan gizi selama kehamilan berubah sesuai usia kehamilan dan kondisi ibu. Halaman ini menampilkan catatan yang tersimpan, dan belum menetapkan status cukup atau kurang secara otomatis."
+            text={modeNutrisi === "menyusui"
+                ? "Makanan ibu menyusui dicatat sebagai pemantauan pola makan ibu, bukan ukuran langsung jumlah ASI atau kecukupan gizi bayi. Mulai usia 6 bulan, fokus halaman Nutrisi otomatis beralih ke catatan makanan/MP-ASI anak."
+                : "Kebutuhan gizi selama kehamilan berubah sesuai usia kehamilan dan kondisi ibu. Halaman ini menampilkan catatan yang tersimpan, dan belum menetapkan status cukup atau kurang secara otomatis."}
           />
-
           <button
             type="button"
             onClick={() => navigate("/si-kecil")}
-            className="mt-4 rounded-xl border border-[#cfe4d2] bg-white px-4 py-3 text-xs font-bold text-[#23652d] transition hover:bg-[#f3faf4]"
+            className="mt-5 rounded-2xl bg-white px-5 py-3 text-xs font-semibold border border-[#cfe4d2] text-[#0f3d1e] transition hover:bg-[#f3faf4] hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
           >
             Buka halaman Si Kecil
           </button>
@@ -1098,28 +1070,23 @@ function Nutrisi() {
   // BELUM ADA PROFIL IBU HAMIL ATAU PROFIL ANAK
   if (!anak) {
     return (
-      <div className="min-h-screen bg-[#eaf8ec] font-jakarta text-[#202833]">
+      <div className="min-h-screen bg-[#eef5ef] bg-[image:radial-gradient(900px_480px_at_90%_-8%,#d8eedd_0%,transparent_60%),radial-gradient(700px_420px_at_-10%_35%,#f7f0d8_0%,transparent_55%)] bg-no-repeat font-sans text-[#16241a]">
         <Header judul="Nutrisi" />
-
-        <main className="mx-auto w-full max-w-[1500px] px-4 pb-10 pt-5 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-6 sm:px-6 lg:px-8">
           <ErrorBanner />
-
-          <section className="rounded-[20px] border border-[#d7ead9] bg-white p-6 text-center shadow-sm sm:p-10">
-            <Baby size={48} className="mx-auto text-[#2d813a]" />
-
-            <h2 className="mt-4 text-xl font-extrabold text-[#23652d]">
+          <section className="text-center rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-8 sm:p-14">
+            <Baby size={48} className="mx-auto box-content rounded-3xl bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] p-4 text-[#176b26] ring-1 ring-white shadow-sm" />
+            <h2 className="mt-6 font-sans text-2xl font-semibold tracking-tight text-[#0f3d1e]">
               Profil belum tersedia
             </h2>
-
             <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-slate-500">
               Tambahkan profil ibu dan data kehamilan, atau buat
               profil anak melalui halaman Si Kecil agar pemantauan
               nutrisi dapat dimulai.
             </p>
-
             <button
               onClick={() => navigate("/si-kecil")}
-              className="mt-5 rounded-xl bg-[#176b26] px-5 py-3 text-sm font-bold text-white hover:bg-[#12551f]"
+              className="mt-6 rounded-2xl px-6 py-3.5 text-sm font-semibold bg-[#0f3d1e] text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
             >
               Buka Si Kecil
             </button>
@@ -1131,37 +1098,32 @@ function Nutrisi() {
 
   // MODE ANAK
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#eaf8ec] font-jakarta text-[#202833]">
+    <div className="min-h-screen overflow-x-hidden bg-[#eef5ef] bg-[image:radial-gradient(900px_480px_at_90%_-8%,#d8eedd_0%,transparent_60%),radial-gradient(700px_420px_at_-10%_35%,#f7f0d8_0%,transparent_55%)] bg-no-repeat font-sans text-[#16241a]">
       <Header judul="Nutrisi" />
-
-      <main className="mx-auto w-full max-w-[1500px] px-4 pb-10 pt-4 sm:px-6 sm:pt-5 lg:px-8">
+      <main className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-5 sm:px-6 sm:pt-6 lg:px-8">
         <ErrorBanner />
-
         {/* HERO */}
-        <section className="rounded-[20px] bg-gradient-to-br from-[#1f742b] to-[#2d8b37] p-4 text-white shadow-sm sm:rounded-[22px] sm:p-5 lg:p-6">
-          <h2 className="text-lg font-extrabold leading-tight sm:text-xl lg:text-2xl">
+        <section className="relative overflow-hidden rounded-[28px] bg-[#0f3d1e] bg-[image:radial-gradient(560px_300px_at_100%_0%,rgba(226,170,60,0.30),transparent_60%),radial-gradient(520px_340px_at_0%_100%,rgba(70,176,106,0.40),transparent_60%),linear-gradient(135deg,#0f3d1e_0%,#17612d_100%)] p-6 text-white shadow-[0_30px_60px_-28px_rgba(15,61,30,0.75)] ring-1 ring-white/10 sm:p-8">
+          <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
             Analisis Nutrisi Harian
           </h2>
-
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-base font-bold">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white/30 to-white/10 font-sans text-lg font-semibold ring-1 ring-white/30">
               {namaAnak.charAt(0).toUpperCase()}
             </div>
-
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-extrabold sm:text-base">
+              <p className="truncate text-base font-semibold sm:text-lg">
                 {namaAnak}
               </p>
-              <p className="mt-0.5 text-xs text-white/80 sm:text-sm">
+              <p className="mt-0.5 text-xs text-white/70 sm:text-sm">
                 {umurAnak}
               </p>
             </div>
-
             {daftarAnak.length > 1 && (
               <select
                 value={childId}
                 onChange={(e) => pilihAnak(e.target.value)}
-                className="max-w-full rounded-xl border border-white/30 bg-white px-3 py-2 text-xs font-bold text-[#23652d] outline-none sm:text-sm"
+                className="max-w-full cursor-pointer rounded-xl border border-white/30 bg-white/95 px-3.5 py-2 text-xs font-semibold text-[#0f3d1e] shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-[#f1c76a] sm:text-sm"
                 aria-label="Pilih anak"
               >
                 {daftarAnak.map((item) => (
@@ -1172,27 +1134,24 @@ function Nutrisi() {
               </select>
             )}
           </div>
-
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#286432] sm:text-sm">
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/95 px-3.5 py-1.5 text-xs font-semibold text-[#0f3d1e] shadow-sm sm:text-sm">
             <CalendarDays size={16} className="text-[#f5a400]" />
             {formatTanggalIndonesia(hariIni)}
           </div>
-
-          <p className="mt-3 text-xs leading-relaxed text-white/85 sm:text-sm">
+          <p className="mt-4 max-w-2xl text-xs leading-relaxed text-white/75 sm:text-sm">
             Ringkasan berdasarkan catatan makanan yang tersimpan.
             Angka nol berarti belum ada asupan yang tercatat pada
             periode ini, bukan berarti anak belum makan.
           </p>
         </section>
-
         {/* PEMANTAUAN 1000 HPK */}
-        <section className="mt-4 rounded-[20px] border border-[#d7ead9] bg-white p-4 shadow-sm sm:p-5">
+        <section className="mt-5 rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e1f8e5] text-[#238039]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] text-[#176b26] ring-1 ring-white shadow-sm">
               <Baby size={21} />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-extrabold text-[#245c2c] sm:text-base">
+              <h2 className="text-sm font-bold tracking-tight text-[#0f3d1e] sm:text-base">
                 Pemantauan 1000 Hari Pertama Kehidupan (HPK)
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-slate-500 sm:text-sm">
@@ -1202,7 +1161,6 @@ function Nutrisi() {
               </p>
             </div>
           </div>
-
           {awal1000HPK ? (
             <>
               <div className="mt-4 flex items-end justify-between gap-3">
@@ -1210,28 +1168,25 @@ function Nutrisi() {
                   <p className="text-xs font-semibold text-slate-500">
                     Hari ke-
                   </p>
-                  <p className="text-2xl font-extrabold text-[#176b26]">
+                  <p className="font-sans text-4xl font-semibold lining-nums tabular-nums tracking-tight text-[#0f3d1e]">
                     {Math.min(hariHPK, 1000)}
                     <span className="text-sm font-semibold text-slate-400">
                       {" "}/ 1000
                     </span>
                   </p>
                 </div>
-
-                <span className="rounded-full bg-[#e6f4e8] px-3 py-1.5 text-xs font-extrabold text-[#286432]">
+                <span className="rounded-full bg-[#e6f4e8] px-3.5 py-1.5 text-xs font-bold text-[#176b26] ring-1 ring-[#cfe4d2]">
                   {selesai1000HPK
                     ? "Periode 1000 HPK terlewati"
                     : `${formatAngka(progresHPK)}%`}
                 </span>
               </div>
-
-              <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#edf2ee]">
+              <div className="mt-3 h-3 overflow-hidden rounded-full bg-[#e4ece6] shadow-inner">
                 <div
-                  className="h-full rounded-full bg-[#29934b] transition-all"
+                  className="h-full rounded-full bg-gradient-to-r from-[#1f8a43] to-[#7bd08f] transition-all duration-700"
                   style={{ width: `${progresHPK}%` }}
                 />
               </div>
-
               <div className="mt-3 flex flex-wrap justify-between gap-2 text-[11px] text-slate-500 sm:text-xs">
                 <span>
                   Awal hitungan:{" "}
@@ -1242,7 +1197,6 @@ function Nutrisi() {
                   {formatTanggalIndonesia(hariKe1000)}
                 </span>
               </div>
-
               {tanggalLahirAnak && (
                 <p className="mt-3 text-xs leading-relaxed text-slate-500">
                   Tanggal lahir:{" "}
@@ -1251,30 +1205,28 @@ function Nutrisi() {
               )}
             </>
           ) : (
-            <div className="mt-4 rounded-xl bg-[#fff8e9] p-3 text-xs leading-relaxed text-slate-600">
+            <div className="mt-4 rounded-2xl border border-[#f3e2b3] bg-[#fff9ea] p-4 text-xs leading-relaxed text-slate-600">
               Usia setelah lahir: {umurHariAnak ?? "—"} hari.
               Total 1000 HPK belum bisa dihitung karena HPHT belum
               tercatat.
             </div>
           )}
-
           <button
             type="button"
             onClick={() => navigate("/si-kecil")}
-            className="mt-4 rounded-xl border border-[#cfe4d2] px-4 py-2 text-xs font-bold text-[#23652d] transition hover:bg-[#f3faf4]"
+            className="mt-5 rounded-xl bg-[#f6fbf7] px-4 py-2.5 text-xs font-semibold border border-[#cfe4d2] text-[#0f3d1e] transition hover:bg-[#f3faf4] hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
           >
             Perbarui data di Si Kecil
           </button>
         </section>
-
         {/* ACUAN AKG */}
-        <section className="mt-4 rounded-[20px] border border-[#d7ead9] bg-white p-4 shadow-sm sm:p-5">
+        <section className="mt-5 rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff1d8] text-[#a86400]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#fff4dc] to-[#ffe3a8] text-[#9a5b00] ring-1 ring-white shadow-sm">
               <TrendingUp size={20} />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-extrabold text-[#245c2c] sm:text-base">
+              <h2 className="text-sm font-bold tracking-tight text-[#0f3d1e] sm:text-base">
                 Acuan Kebutuhan Gizi Berdasarkan Umur
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-slate-500 sm:text-sm">
@@ -1285,19 +1237,17 @@ function Nutrisi() {
               </p>
             </div>
           </div>
-
           {acuanAkgAnak ? (
             <>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f3faf4] p-3">
-                <span className="text-xs font-bold text-[#286432]">
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#dcebdf] bg-[#f3faf4] p-4">
+                <span className="text-xs font-semibold text-[#3a5a42]">
                   Kelompok acuan AKG
                 </span>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-extrabold text-[#23652d]">
+                <span className="rounded-full bg-white px-3.5 py-1 text-xs font-bold text-[#0f3d1e] shadow-sm ring-1 ring-[#14301b]/5">
                   {acuanAkgAnak.label}
                 </span>
               </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 {[
                   {
                     label: "Energi",
@@ -1327,12 +1277,12 @@ function Nutrisi() {
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="rounded-xl border border-[#e5eee6] p-3"
+                    className="rounded-2xl border border-[#e5eee6] bg-gradient-to-b from-white to-[#f6faf7] p-4"
                   >
                     <p className="text-[11px] font-semibold text-slate-500">
                       {item.label}
                     </p>
-                    <p className="mt-1 text-lg font-extrabold text-[#23652d]">
+                    <p className="mt-1 font-sans text-2xl font-semibold lining-nums tabular-nums text-[#0f3d1e]">
                       {formatAngka(item.value, 0)}
                     </p>
                     <p className="text-[10px] text-slate-400">
@@ -1341,21 +1291,19 @@ function Nutrisi() {
                   </div>
                 ))}
               </div>
-
               <p className="mt-3 text-xs leading-relaxed text-slate-600">
                 {acuanAkgAnak.catatan}
               </p>
             </>
           ) : (
-            <div className="mt-3 rounded-xl bg-[#fff8e9] p-3 text-xs leading-relaxed text-[#805514]">
+            <div className="mt-4 rounded-2xl border border-[#f3e2b3] bg-[#fff9ea] p-4 text-xs leading-relaxed text-[#805514]">
               {umurBulanAnak !== null && umurBulanAnak > 35
                 ? "Umur anak berada di luar kelompok acuan bayi dan anak kecil yang tersedia di halaman ini."
                 : "Acuan belum tersedia karena umur anak belum dapat dihitung."}
             </div>
           )}
-
-          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
-            <p className="text-xs font-extrabold text-amber-900">
+          <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50/90 p-4">
+            <p className="text-xs font-semibold text-amber-900">
               Status penilaian: belum dapat dinilai otomatis
             </p>
             <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
@@ -1365,40 +1313,35 @@ function Nutrisi() {
               total catatan.
             </p>
           </div>
-
           <p className="mt-3 text-[10px] leading-relaxed text-slate-400">
             Sumber acuan: Permenkes RI No. 28 Tahun 2019 tentang
             Angka Kecukupan Gizi yang Dianjurkan untuk Masyarakat
             Indonesia.
           </p>
         </section>
-
         {/* TABS */}
         <TabNavigasi />
-
         {/* HARIAN */}
         {tabAktif === "Harian" && (
           <div className="space-y-5">
-            <section className="mt-4 rounded-[20px] bg-white p-4 text-center shadow-sm sm:p-5 lg:p-6">
-              <p className="text-[11px] font-extrabold tracking-[0.16em] text-slate-500 sm:text-xs">
+            <section className="mt-5 text-center rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
+              <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-500 sm:text-xs">
                 RINGKASAN ASUPAN HARI INI
               </p>
-
               <p className="mt-1 text-xs text-slate-500 sm:text-sm">
                 {formatTanggalIndonesia(hariIni)}
               </p>
-
-              <div className="relative mx-auto mt-5 h-44 w-44 sm:h-52 sm:w-52">
+              <div className="relative mx-auto mt-6 h-48 w-48 sm:h-60 sm:w-60">
                 <svg
                   viewBox="0 0 200 200"
-                  className="h-full w-full -rotate-90"
+                  className="h-full w-full -rotate-90 drop-shadow-[0_10px_16px_rgba(31,138,67,0.28)]"
                 >
                   <circle
                     cx="100"
                     cy="100"
                     r="82"
                     fill="none"
-                    stroke="#e6f4e8"
+                    stroke="#e4ece6"
                     strokeWidth="14"
                   />
                   <circle
@@ -1406,7 +1349,7 @@ function Nutrisi() {
                     cy="100"
                     r="82"
                     fill="none"
-                    stroke="#2e8438"
+                    stroke="#1f8a43"
                     strokeWidth="14"
                     strokeLinecap="round"
                     strokeDasharray={2 * Math.PI * 82}
@@ -1419,36 +1362,32 @@ function Nutrisi() {
                     }
                   />
                 </svg>
-
                 <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
-                  <span className="text-3xl font-extrabold text-[#176b26] sm:text-4xl">
+                  <span className="font-sans text-5xl font-semibold lining-nums text-[#0f3d1e] sm:text-6xl">
                     {makananHariIni.length}
                   </span>
-                  <span className="mt-1 rounded-full bg-[#e6f4e8] px-3 py-1 text-center text-[9px] font-extrabold tracking-wider text-[#286432] sm:text-[10px]">
+                  <span className="mt-1 rounded-full bg-[#e6f4e8] px-3 py-1 text-center text-[9px] font-semibold tracking-wider text-[#286432] sm:text-[10px]">
                     CATATAN MAKAN
                   </span>
                 </div>
               </div>
-
               <p className="mt-4 text-xs leading-relaxed text-slate-500 sm:text-sm">
                 {makananHariIni.length > 0
                   ? `${makananHariIni.length} catatan makanan tersimpan untuk hari ini.`
                   : "Belum ada makanan yang tercatat untuk hari ini."}
               </p>
             </section>
-
             <section>
               <SectionTitle title="Makronutrisi Harian" />
               <KartuSemuaNutrisi periode="Hari ini" />
             </section>
-
-            <section className="rounded-[18px] border border-[#d7ead9] bg-white p-4 shadow-sm sm:p-5">
+            <section className="rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#e1f8e5] text-[#238039]">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] text-[#176b26] ring-1 ring-white shadow-sm">
                   <Utensils size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold sm:text-base">
+                  <h3 className="text-sm font-bold tracking-tight text-[#0f3d1e] sm:text-base">
                     Catatan Makanan Hari Ini
                   </h3>
                   <p className="mt-1 text-xs leading-relaxed text-slate-500 sm:text-sm">
@@ -1456,7 +1395,6 @@ function Nutrisi() {
                   </p>
                 </div>
               </div>
-
               {memuatMakanan ? (
                 <p className="mt-4 text-sm text-slate-500">
                   Memuat catatan makanan...
@@ -1473,29 +1411,25 @@ function Nutrisi() {
             </section>
           </div>
         )}
-
         {/* MINGGUAN */}
         {tabAktif === "Mingguan" && (
           <div className="space-y-4 sm:space-y-5">
-            <section className="mt-4 rounded-[20px] border border-[#d7ead9] bg-white p-4 text-center shadow-sm sm:p-5 lg:p-6">
-              <h2 className="font-playfair text-base font-bold text-[#24642e] sm:text-lg">
+            <section className="mt-5 text-center rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
+              <h2 className="font-sans text-lg font-semibold tracking-tight text-[#0f3d1e] sm:text-xl">
                 RINGKASAN NUTRISI MINGGUAN
               </h2>
-
               <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
                 {formatTanggalIndonesia(awalMinggu)} –{" "}
                 {formatTanggalIndonesia(hariIni)}
               </p>
-
               <div className="mt-5">
                 <p className="text-xs font-medium text-slate-500">
                   Hari dengan catatan makanan
                 </p>
-                <p className="mt-1 text-3xl font-extrabold text-[#24642e] sm:text-4xl">
+                <p className="mt-1 font-sans text-4xl font-semibold lining-nums text-[#0f3d1e] sm:text-5xl">
                   {jumlahHariTercatat} dari 7 hari
                 </p>
               </div>
-
               <div className="mx-auto mt-6 grid max-w-2xl grid-cols-7 gap-1 sm:gap-3">
                 {dataHarianMingguan.map((item) => {
                   const maxKalori = Math.max(
@@ -1504,14 +1438,12 @@ function Nutrisi() {
                       (hari) => hari.total.kalori
                     )
                   );
-
                   const tinggi = item.jumlahMakanan
                     ? Math.max(
                         5,
                         (item.total.kalori / maxKalori) * 48
                       )
                     : 3;
-
                   return (
                     <div
                       key={item.tanggal}
@@ -1527,10 +1459,10 @@ function Nutrisi() {
                       </span>
                       <div className="mt-2 flex h-12 items-end">
                         <div
-                          className={`w-3 rounded-t-md sm:w-4 ${
+                          className={`w-3 rounded-full sm:w-4 ${
                             item.jumlahMakanan
-                              ? "bg-[#53b875]"
-                              : "bg-[#e6eee7]"
+                              ? "bg-gradient-to-t from-[#1f8a43] to-[#7bd08f]"
+                              : "bg-[#e4ece6]"
                           }`}
                           style={{ height: `${tinggi}px` }}
                         />
@@ -1539,28 +1471,24 @@ function Nutrisi() {
                   );
                 })}
               </div>
-
               <p className="mt-3 text-xs text-slate-500">
                 Grafik menunjukkan kalori yang tercatat per hari,
                 bukan persentase kecukupan gizi.
               </p>
             </section>
-
             <KartuSemuaNutrisi periode="7 hari" />
-
-            <section className="rounded-[20px] border border-[#d7ead9] bg-white p-4 shadow-sm sm:p-5">
-              <h2 className="text-sm font-extrabold text-[#202833] sm:text-base">
+            <section className="rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
+              <h2 className="text-sm font-bold tracking-tight text-[#0f3d1e] sm:text-base">
                 Rincian Harian
               </h2>
-
               <div className="mt-4 space-y-3">
                 {dataHarianMingguan.map((item) => (
                   <div
                     key={item.tanggal}
-                    className="flex items-center justify-between gap-3 border-b border-[#edf1ee] pb-3 last:border-b-0"
+                    className="flex items-center justify-between gap-3 border-b border-[#e8efe9] pb-3 last:border-b-0"
                   >
                     <div>
-                      <p className="text-sm font-bold text-[#202833]">
+                      <p className="text-sm font-bold text-[#16241a]">
                         {item.hari}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -1569,9 +1497,8 @@ function Nutrisi() {
                         )}
                       </p>
                     </div>
-
                     <div className="text-right">
-                      <p className="text-sm font-extrabold text-[#24642e]">
+                      <p className="text-sm font-bold lining-nums tabular-nums text-[#176b26]">
                         {formatAngka(item.total.kalori)} kkal
                       </p>
                       <p className="text-xs text-slate-500">
@@ -1582,7 +1509,6 @@ function Nutrisi() {
                 ))}
               </div>
             </section>
-
             <InsightBox
               title={
                 jumlahHariTercatat > 0
@@ -1597,13 +1523,12 @@ function Nutrisi() {
             />
           </div>
         )}
-
         {/* TREN BULANAN */}
         {tabAktif === "Tren Bulanan" && (
           <div className="space-y-4 sm:space-y-5">
-            <section className="mt-4 rounded-[20px] border border-[#d7ead9] bg-white p-4 shadow-sm sm:p-5 lg:p-6">
+            <section className="mt-5 rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
               <div className="text-center">
-                <h2 className="font-playfair text-base font-bold text-[#24642e] sm:text-lg">
+                <h2 className="font-sans text-lg font-semibold tracking-tight text-[#0f3d1e] sm:text-xl">
                   TREN ASUPAN BULANAN
                 </h2>
                 <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
@@ -1613,39 +1538,34 @@ function Nutrisi() {
                   }).format(hariIni)}
                 </p>
               </div>
-
               <div className="mt-6 space-y-4">
                 {dataBulanan.map((item) => {
                   const nilaiMaksimum = Math.max(
                     1,
                     ...dataBulanan.map((minggu) => minggu.rataKalori)
                   );
-
                   const lebar =
                     item.jumlahHari > 0
                       ? (item.rataKalori / nilaiMaksimum) * 100
                       : 0;
-
                   return (
                     <div key={item.nama}>
                       <div className="mb-1.5 flex items-center justify-between gap-3">
                         <span className="text-xs font-bold text-slate-600 sm:text-sm">
                           {item.nama} ({item.rentang})
                         </span>
-                        <span className="text-xs font-bold text-[#24642e] sm:text-sm">
+                        <span className="text-xs font-bold tabular-nums text-[#176b26] sm:text-sm">
                           {item.jumlahHari > 0
                             ? `${formatAngka(item.rataKalori)} kkal/hari`
                             : "Belum ada data"}
                         </span>
                       </div>
-
-                      <div className="h-3 overflow-hidden rounded-full bg-[#edf2ee]">
+                      <div className="h-3 overflow-hidden rounded-full bg-[#e4ece6] shadow-inner">
                         <div
-                          className="h-full rounded-full bg-[#29934b] transition-all"
+                          className="h-full rounded-full bg-gradient-to-r from-[#1f8a43] to-[#7bd08f] transition-all duration-700"
                           style={{ width: `${lebar}%` }}
                         />
                       </div>
-
                       <p className="mt-1 text-[11px] text-slate-400">
                         {item.jumlahMakanan} catatan makanan ·{" "}
                         {item.jumlahHari} hari tercatat
@@ -1654,27 +1574,23 @@ function Nutrisi() {
                   );
                 })}
               </div>
-
               <p className="mt-5 text-xs leading-relaxed text-slate-500">
                 Grafik membandingkan rata-rata kalori pada hari
                 yang memiliki catatan makanan. Grafik tidak
                 menyatakan kecukupan atau kualitas gizi.
               </p>
             </section>
-
             <KartuSemuaNutrisi periode="Bulan ini" />
-
-            <section className="overflow-hidden rounded-[20px] border border-[#d7ead9] bg-white shadow-sm">
-              <div className="p-4 sm:p-5">
-                <h2 className="text-sm font-extrabold text-[#202833] sm:text-base">
+            <section className="overflow-hidden rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5">
+              <div className="p-5 sm:p-7">
+                <h2 className="text-sm font-bold tracking-tight text-[#0f3d1e] sm:text-base">
                   Perbandingan Asupan per Minggu
                 </h2>
               </div>
-
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[470px] border-collapse">
                   <thead>
-                    <tr className="border-y border-[#edf1ee] bg-[#f8fbf8]">
+                    <tr className="border-y border-[#e8efe9] bg-[#f3f8f4]">
                       {[
                         "Minggu",
                         "Kalori",
@@ -1684,33 +1600,32 @@ function Nutrisi() {
                       ].map((judul) => (
                         <th
                           key={judul}
-                          className="px-3 py-3 text-center text-xs font-bold text-slate-500 first:text-left"
+                          className="px-4 py-3.5 text-center text-xs font-semibold text-slate-500 first:text-left"
                         >
                           {judul}
                         </th>
                       ))}
                     </tr>
                   </thead>
-
                   <tbody>
                     {dataBulanan.map((item) => (
                       <tr
                         key={item.nama}
-                        className="border-b border-[#edf1ee] last:border-b-0"
+                        className="border-b border-[#e8efe9] transition-colors last:border-b-0 hover:bg-[#f6faf7]"
                       >
-                        <td className="px-4 py-3 text-xs font-semibold text-[#202833] sm:text-sm">
+                        <td className="px-4 py-3.5 text-xs font-semibold text-[#16241a] sm:text-sm">
                           {item.nama}
                         </td>
-                        <td className="px-3 py-3 text-center text-xs text-[#24642e] sm:text-sm">
+                        <td className="px-4 py-3.5 text-center text-xs tabular-nums text-[#176b26] sm:text-sm">
                           {formatAngka(item.total.kalori, 0)}
                         </td>
-                        <td className="px-3 py-3 text-center text-xs text-[#24642e] sm:text-sm">
+                        <td className="px-4 py-3.5 text-center text-xs tabular-nums text-[#176b26] sm:text-sm">
                           {formatAngka(item.total.protein)}
                         </td>
-                        <td className="px-3 py-3 text-center text-xs text-[#24642e] sm:text-sm">
+                        <td className="px-4 py-3.5 text-center text-xs tabular-nums text-[#176b26] sm:text-sm">
                           {formatAngka(item.total.karbohidrat)}
                         </td>
-                        <td className="px-3 py-3 text-center text-xs text-[#24642e] sm:text-sm">
+                        <td className="px-4 py-3.5 text-center text-xs tabular-nums text-[#176b26] sm:text-sm">
                           {formatAngka(item.total.lemak)}
                         </td>
                       </tr>
@@ -1719,7 +1634,6 @@ function Nutrisi() {
                 </table>
               </div>
             </section>
-
             <InsightBox
               title={
                 totalBulanan.kalori > 0
@@ -1748,30 +1662,27 @@ function NutritionCard({
   iconBg,
   iconColor,
 }) {
+
   return (
-    <article className="rounded-[16px] border border-slate-100 bg-white p-4 shadow-sm">
+    <article className="rounded-[22px] border border-white bg-white p-5 shadow-[0_1px_2px_rgba(20,48,27,0.05),0_14px_30px_-18px_rgba(20,48,27,0.2)] ring-1 ring-[#14301b]/5 transition-shadow duration-200 hover:shadow-[0_20px_40px_-16px_rgba(20,48,27,0.28)]">
       <div className="flex items-center justify-between gap-2">
         <div
-          className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconBg} ${iconColor}`}
+          className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}
         >
           {icon}
         </div>
-
         {percentage !== null && percentage !== undefined && (
-          <span className="text-xs font-extrabold text-[#176b26]">
+          <span className="rounded-full bg-[#e6f4e8] px-2 py-0.5 text-xs font-bold text-[#176b26]">
             {percentage}
           </span>
         )}
       </div>
-
-      <h3 className="mt-3 text-sm font-bold text-slate-600">
+      <h3 className="mt-4 text-[13px] font-semibold text-slate-500">
         {title}
       </h3>
-
-      <p className="mt-1 break-words text-xl font-extrabold text-[#202833]">
+      <p className="mt-1 break-words font-sans text-2xl font-semibold lining-nums tabular-nums tracking-tight text-[#16241a]">
         {value}
       </p>
-
       <p className="mt-1 text-[11px] leading-relaxed text-slate-400 sm:text-xs">
         {target}
       </p>
@@ -1780,10 +1691,11 @@ function NutritionCard({
 }
 
 function SectionTitle({ title }) {
+
   return (
     <div className="mb-3 flex items-center gap-2">
-      <span className="h-6 w-1 rounded-full bg-[#176b26]" />
-      <h2 className="text-base font-extrabold text-[#245c2c] sm:text-lg">
+      <span className="h-6 w-1 rounded-full bg-gradient-to-b from-[#2fa356] to-[#0f3d1e]" />
+      <h2 className="font-sans text-lg font-semibold tracking-tight text-[#0f3d1e] sm:text-xl">
         {title}
       </h2>
     </div>
@@ -1791,10 +1703,11 @@ function SectionTitle({ title }) {
 }
 
 function BarisMakanan({ item }) {
+
   return (
-    <div className="flex items-start justify-between gap-3 rounded-xl border border-[#edf1ee] p-3">
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-[#e8efe9] bg-[#fbfdfb] p-4 transition-colors hover:border-[#cfe4d2] hover:bg-white">
       <div className="min-w-0">
-        <p className="break-words text-sm font-bold text-[#202833]">
+        <p className="break-words text-sm font-bold text-[#16241a]">
           {item.nama_makanan}
         </p>
         <p className="mt-1 text-xs text-slate-500">
@@ -1803,7 +1716,7 @@ function BarisMakanan({ item }) {
           Porsi {formatAngka(angka(item.porsi))}
         </p>
       </div>
-      <p className="shrink-0 text-xs font-bold text-[#24642e]">
+      <p className="shrink-0 rounded-full bg-[#e6f4e8] px-2.5 py-1 text-xs font-bold lining-nums tabular-nums text-[#176b26]">
         {formatAngka(angka(item.kalori_kcal))} kkal
       </p>
     </div>
@@ -1811,13 +1724,14 @@ function BarisMakanan({ item }) {
 }
 
 function EmptyFood({ mode = "anak" }) {
+
   return (
-    <div className="mt-4 rounded-xl bg-[#f6faf6] p-4 text-center">
-      <p className="text-sm font-bold text-[#286432]">
+    <div className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] p-6 text-center">
+      <p className="text-sm font-semibold text-[#0f3d1e]">
         Belum ada catatan makanan
       </p>
       <p className="mt-1 text-xs leading-relaxed text-slate-500">
-        {mode === "ibu"
+        {mode !== "anak"
           ? "Tambahkan makanan ke tabel maternal_food_logs dengan pregnancy_id yang sesuai."
           : "Tambahkan makanan ke tabel food_logs dengan child_id yang sesuai."}
       </p>
@@ -1826,14 +1740,14 @@ function EmptyFood({ mode = "anak" }) {
 }
 
 function InsightBox({ title, text }) {
+
   return (
-    <section className="flex items-start gap-3 rounded-[18px] border border-[#d7ead9] bg-[#f5fbf6] p-4 sm:p-5">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#e1f8e5] text-[#238039]">
+    <section className="mt-5 flex items-start gap-4 rounded-[22px] border border-[#cfe4d2] bg-gradient-to-br from-[#f4fbf6] to-[#e8f4eb] p-5 sm:p-6">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] text-[#176b26] ring-1 ring-white shadow-sm">
         <Lightbulb size={18} />
       </div>
-
       <div>
-        <h3 className="text-sm font-bold text-[#245c2c]">
+        <h3 className="text-sm font-bold text-[#0f3d1e]">
           {title}
         </h3>
         <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-sm">

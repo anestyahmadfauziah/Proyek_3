@@ -220,6 +220,8 @@ function Stok() {
 
   const [error, setError] = useState("");
 
+  const [menghapusKedaluwarsa, setMenghapusKedaluwarsa] = useState(false);
+
   /* =======================================================
      AMBIL DATA STOK
   ======================================================= */
@@ -515,6 +517,67 @@ function Stok() {
   };
 
   /* =======================================================
+     DELETE SEMUA YANG KEDALUWARSA
+  ======================================================= */
+
+  const kedaluwarsaIds = stock
+    .filter((item) => item.status === "Kedaluwarsa")
+    .map((item) => item.id);
+
+  const hapusSemuaKedaluwarsa = async () => {
+    if (kedaluwarsaIds.length === 0 || menghapusKedaluwarsa) {
+      return;
+    }
+
+    const yakin = window.confirm(
+      `Hapus ${kedaluwarsaIds.length} bahan yang sudah kedaluwarsa? Tindakan ini tidak dapat dibatalkan.`
+    );
+
+    if (!yakin) {
+      return;
+    }
+
+    try {
+      setMenghapusKedaluwarsa(true);
+      setError("");
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!user) {
+        setError("Silakan login terlebih dahulu.");
+        return;
+      }
+
+      const { error: deleteError } = await supabase
+        .from("stok")
+        .delete()
+        .in("id", kedaluwarsaIds)
+        .eq("user_id", user.id);
+
+      if (deleteError) {
+        console.error("Supabase DELETE KEDALUWARSA ERROR:", deleteError);
+
+        throw deleteError;
+      }
+
+      setStock((prev) => prev.filter((item) => item.status !== "Kedaluwarsa"));
+    } catch (err) {
+      console.error("Gagal menghapus bahan kedaluwarsa:", err);
+
+      setError(err?.message || "Gagal menghapus bahan kedaluwarsa.");
+    } finally {
+      setMenghapusKedaluwarsa(false);
+    }
+  };
+
+  /* =======================================================
      RETURN
   ======================================================= */
 
@@ -640,6 +703,41 @@ function Stok() {
                 count={prioritas.length}
                 tone="warn"
               />
+
+              {kedaluwarsaIds.length > 0 && (
+                <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-red-100 bg-gradient-to-r from-[#fff5f5] to-[#fff9f0] p-3.5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-500">
+                      <Trash2 size={18} />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-extrabold tracking-tight text-[#7a1f1f]">
+                        {kedaluwarsaIds.length} bahan sudah kedaluwarsa
+                      </p>
+                      <p className="mt-0.5 text-[11px] font-medium text-red-400 sm:text-xs">
+                        Bersihkan sekaligus agar stokmu tetap rapi.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={hapusSemuaKedaluwarsa}
+                    disabled={menghapusKedaluwarsa}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#e5484d] to-[#f06a5a] px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-red-900/20 transition hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+                  >
+                    {menghapusKedaluwarsa ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={15} />
+                    )}
+                    {menghapusKedaluwarsa
+                      ? "Menghapus..."
+                      : "Hapus semua yang kedaluwarsa"}
+                  </button>
+                </div>
+              )}
 
               <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {prioritas.length > 0 ? (

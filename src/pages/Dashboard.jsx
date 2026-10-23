@@ -452,6 +452,10 @@ function Dashboard() {
     )
     .slice(0, 3);
 
+  // Bahan kedaluwarsa tidak ditampilkan di ringkasan kulkas,
+  // cukup muncul di kartu "Kondisi Stok Saat Ini".
+  const bahanRingkasan = bahan.filter((item) => item.status !== "Kedaluwarsa");
+
   /* =======================================================
      NAMA USER
   ======================================================= */
@@ -800,10 +804,7 @@ function Dashboard() {
           />
 
           <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-[#f8d35b]/40 bg-[#f8d35b]/15 px-3 py-1.5 text-[10px] font-bold text-[#ffe27a] sm:text-[11px]">
-            </div>
-
-            <p className="mt-4 text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl">
+            <p className="text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl">
               Racik Resep
               <br />
               <span className="bg-gradient-to-r from-[#ffe27a] to-[#9df0ae] bg-clip-text text-transparent">
@@ -1030,8 +1031,15 @@ function Dashboard() {
               <p className="col-span-full text-xs text-slate-400">
                 Belum ada bahan di stok kulkas.
               </p>
+            ) : bahanRingkasan.length === 0 ? (
+              <p className="col-span-full text-xs text-slate-400">
+                Tidak ada bahan yang masih segar. Hapus bahan kedaluwarsa di
+                halaman Stok.
+              </p>
             ) : (
-              bahan.map((item) => <BahanCard key={item.id} item={item} />)
+              bahanRingkasan.map((item) => (
+                <BahanCard key={item.id} item={item} />
+              ))
             )}
           </div>
 

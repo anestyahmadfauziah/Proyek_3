@@ -541,7 +541,7 @@ function Notifikasi() {
 
           <div className="min-w-0">
 
-            <h1 className="font-playfair text-xl font-bold text-[#24642e] sm:text-2xl">
+            <h1 className="font-sans text-xl font-bold text-[#24642e] sm:text-2xl">
               Notifikasi
             </h1>
 

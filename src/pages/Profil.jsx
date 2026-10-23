@@ -9,6 +9,7 @@ import {
   LogOut,
   Camera,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 
@@ -108,30 +109,45 @@ function Profil() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f8f5] font-jakarta">
-        <p className="text-sm text-slate-500">Memuat profil...</p>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#e6f4e8] via-[#f3f9f3] to-[#f8fbf8] font-jakarta">
+        <div className="flex flex-col items-center gap-3 rounded-3xl border border-white bg-white/80 px-10 py-8 shadow-[0_8px_28px_rgba(35,101,45,0.1)]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#e3f3e5]">
+            <Loader2 size={26} className="animate-spin text-[#23652d]" />
+          </div>
+          <p className="text-sm font-medium text-slate-500">Memuat profil...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f5f8f5] font-jakarta text-[#202833]">
+    <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-b from-[#e6f4e8] via-[#f3f9f3] to-[#f8fbf8] font-jakarta text-[#202833]">
+      {/* DEKORASI LATAR */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-24 top-32 h-72 w-72 rounded-full bg-green-300/25 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-24 top-[55%] h-72 w-72 rounded-full bg-emerald-200/30 blur-3xl"
+      />
+
       {/* HEADER */}
-      <header className="bg-[#f1f5f1]">
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
+      <header className="sticky top-0 z-40 border-b border-white/60 bg-white/80 shadow-[0_4px_20px_rgba(35,101,45,0.06)] backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3.5 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#202833] transition hover:bg-white/70 sm:h-10 sm:w-10"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#e1ece3] bg-white text-[#23652d] shadow-sm transition hover:-translate-x-0.5 hover:bg-[#f1f8f2] hover:shadow-md active:scale-95"
             aria-label="Kembali"
           >
-            <ArrowLeft size={23} strokeWidth={2} className="sm:h-6 sm:w-6" />
+            <ArrowLeft size={20} strokeWidth={2.2} />
           </button>
-          <div>
-            <h1 className="font-sans text-xl font-bold text-[#24642e] sm:text-2xl">
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-extrabold tracking-tight text-[#1c3a22] sm:text-xl">
               Profil Saya
             </h1>
-            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
+            <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500 sm:text-xs">
               Kelola informasi akun Anda dengan mudah.
             </p>
           </div>
@@ -139,21 +155,29 @@ function Profil() {
       </header>
 
       {/* CONTENT */}
-      <main className="mx-auto w-full max-w-5xl px-4 pb-8 sm:px-6 lg:px-8">
+      <main className="relative mx-auto w-full max-w-5xl px-4 pb-10 pt-5 sm:px-6 sm:pt-6 lg:px-8">
         {/* PROFILE SUMMARY */}
-        <section className="relative mt-0 overflow-hidden rounded-b-[20px] border border-[#d9efdc] bg-[#f5fbf5] px-5 py-5 shadow-sm sm:rounded-[20px] sm:px-7 sm:py-6">
-          <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-[#e8f6e9] opacity-70" />
-          <div className="pointer-events-none absolute -bottom-24 right-20 h-44 w-44 rounded-full bg-[#edf8ee] opacity-80" />
+        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#12471f] via-[#1b6b2d] to-[#2f9e4f] px-5 py-7 text-white shadow-[0_20px_50px_rgba(18,71,31,0.3)] sm:px-8 sm:py-9">
+          <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute -bottom-24 right-24 h-52 w-52 rounded-full bg-emerald-300/20 blur-2xl" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:22px_22px]"
+          />
 
-          <div className="relative flex items-center gap-4 sm:gap-6">
+          <div className="relative flex items-center gap-4 sm:gap-7">
             <div className="relative shrink-0">
-              <div className="flex h-[92px] w-[92px] items-center justify-center overflow-hidden rounded-full border-[4px] border-white bg-[#e5f3e7] shadow-sm sm:h-[112px] sm:w-[112px]">
-                <UserRound size={55} strokeWidth={1.5} className="text-[#3d9951] sm:h-[68px] sm:w-[68px]" />
+              <div className="flex h-[92px] w-[92px] items-center justify-center overflow-hidden rounded-full border-4 border-white/90 bg-gradient-to-br from-[#e5f3e7] to-[#cfeBd4] shadow-xl shadow-black/20 ring-4 ring-white/20 sm:h-[116px] sm:w-[116px]">
+                <UserRound
+                  size={55}
+                  strokeWidth={1.5}
+                  className="text-[#2f8a45] sm:h-[68px] sm:w-[68px]"
+                />
               </div>
               <button
                 type="button"
                 onClick={() => alert("Fitur ubah foto profil belum tersedia.")}
-                className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-[3px] border-white bg-[#287341] text-white shadow-sm transition hover:bg-[#205e35] sm:h-9 sm:w-9"
+                className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-white bg-gradient-to-br from-[#f79500] to-[#ffb020] text-white shadow-lg transition hover:scale-110 active:scale-95"
                 aria-label="Ubah foto profil"
               >
                 <Camera size={15} strokeWidth={2.2} />
@@ -161,11 +185,13 @@ function Profil() {
             </div>
 
             <div className="min-w-0">
-              <p className="text-sm text-slate-500 sm:text-base">Halo,</p>
-              <h2 className="mt-0.5 break-words text-2xl font-bold leading-tight text-[#202833] sm:text-[28px]">
+              <p className="text-sm font-medium text-white/80 sm:text-base">
+                Halo,
+              </p>
+              <h2 className="mt-0.5 break-words text-2xl font-extrabold leading-tight tracking-tight sm:text-[32px]">
                 {nama}
               </h2>
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#d9f8e3] px-3 py-1.5 text-xs font-bold text-[#287341] sm:text-sm">
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3.5 py-1.5 text-xs font-bold backdrop-blur-md sm:text-sm">
                 <UserRound size={14} strokeWidth={2.2} />
                 Pengguna
               </div>
@@ -174,14 +200,16 @@ function Profil() {
         </section>
 
         {/* INFORMASI AKUN */}
-        <section className="mt-5 rounded-[20px] border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d9f8e3] text-[#287341]">
+        <section className="mt-5 rounded-3xl border border-white bg-white/90 p-4 shadow-[0_8px_28px_rgba(35,101,45,0.08)] sm:mt-6 sm:p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1f6b2b] to-[#2f9e4f] text-white shadow-md shadow-green-900/20">
               <UserRound size={20} strokeWidth={2} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-[#202833] sm:text-base">Informasi Akun</h2>
-              <p className="mt-0.5 text-[11px] text-slate-400 sm:text-xs">
+              <h2 className="text-sm font-extrabold tracking-tight text-[#202833] sm:text-base">
+                Informasi Akun
+              </h2>
+              <p className="mt-0.5 text-[11px] font-medium text-slate-400 sm:text-xs">
                 Data diri Anda yang terdaftar di aplikasi.
               </p>
             </div>
@@ -214,14 +242,18 @@ function Profil() {
         <button
           type="button"
           onClick={handleLogout}
-          className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-[16px] border border-red-200 bg-white text-sm font-bold text-[#d33232] transition hover:bg-red-50 sm:h-12 sm:text-base"
+          className="group mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-200 bg-white text-sm font-extrabold text-[#d33232] shadow-sm transition hover:border-red-300 hover:bg-red-50 hover:shadow-md active:scale-[0.99] sm:h-[52px] sm:text-base"
         >
-          <LogOut size={19} strokeWidth={2.2} />
+          <LogOut
+            size={19}
+            strokeWidth={2.2}
+            className="transition group-hover:-translate-x-0.5"
+          />
           Keluar
         </button>
 
         {/* FOOTER */}
-        <p className="mt-3 pb-3 text-center text-xs text-slate-400 sm:text-sm">
+        <p className="mt-4 pb-3 text-center text-xs font-medium text-slate-400 sm:text-sm">
           © 2026 Dapur Cerdas · Bijak Mengolah, Sehat Bertumbuh
         </p>
       </main>
@@ -231,17 +263,22 @@ function Profil() {
 
 function ProfileInfo({ icon, label, value }) {
   return (
-    <div className="flex min-h-[70px] items-center gap-3 rounded-[14px] border border-slate-100 bg-[#f8fbf9] px-3 py-2.5 transition hover:bg-[#f3f9f4] sm:min-h-[76px] sm:px-4">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#dff7e6] text-[#287341] sm:h-10 sm:w-10">
+    <div className="group flex min-h-[72px] items-center gap-3 rounded-2xl border border-[#e4eee6] bg-white px-3.5 py-3 shadow-[0_4px_14px_rgba(32,40,51,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[#cfe3d2] hover:shadow-[0_10px_24px_rgba(35,101,45,0.1)] sm:min-h-[78px] sm:px-4">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#e3f6e8] to-[#c9eed2] text-[#23652d] shadow-sm transition group-hover:scale-105 sm:h-11 sm:w-11">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] text-slate-400 sm:text-xs">{label}</p>
-        <p className="mt-0.5 max-w-full truncate text-sm font-semibold text-[#202833] sm:text-sm" title={value}>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 sm:text-xs">
+          {label}
+        </p>
+        <p
+          className="mt-0.5 max-w-full truncate text-sm font-bold text-[#202833]"
+          title={value}
+        >
           {value}
         </p>
       </div>
-      <ChevronRight size={17} className="shrink-0 text-slate-400" />
+      <ChevronRight size={17} className="shrink-0 text-slate-300" />
     </div>
   );
 }
@@ -251,16 +288,25 @@ function ProfileAction({ icon, title, description, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[70px] w-full items-center gap-3 rounded-[14px] border border-slate-100 bg-[#f8fbf9] px-3 py-2.5 text-left transition hover:bg-[#f3f9f4] sm:min-h-[76px] sm:px-4"
+      className="group flex min-h-[72px] w-full items-center gap-3 rounded-2xl border border-[#e4eee6] bg-white px-3.5 py-3 text-left shadow-[0_4px_14px_rgba(32,40,51,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[#f3d9a4] hover:shadow-[0_10px_24px_rgba(231,155,40,0.15)] active:scale-[0.99] sm:min-h-[78px] sm:px-4"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#fff1d9] text-[#e79b28] sm:h-10 sm:w-10">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#fff4dd] to-[#ffe4a8] text-[#c87800] shadow-sm transition group-hover:scale-105 sm:h-11 sm:w-11">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-[#202833]">{title}</p>
-        <p className="mt-0.5 truncate text-[11px] text-slate-400 sm:text-xs">{description}</p>
+        <p className="text-sm font-extrabold tracking-tight text-[#202833]">
+          {title}
+        </p>
+        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400 sm:text-xs">
+          {description}
+        </p>
       </div>
-      <ChevronRight size={17} className="shrink-0 text-slate-400" />
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 transition group-hover:bg-[#f79500] group-hover:text-white">
+        <ChevronRight
+          size={16}
+          className="transition group-hover:translate-x-0.5"
+        />
+      </div>
     </button>
   );
 }

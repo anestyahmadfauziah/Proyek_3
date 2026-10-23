@@ -699,10 +699,14 @@ export default function RacikResepAI() {
               </button>
             </div>
 
-            <div className="relative rounded-[2rem] border border-white bg-white/90 p-6 shadow-[0_20px_50px_rgba(35,101,45,0.12)] sm:p-10">
-              <div className="mb-6 flex h-28 items-center justify-center rounded-3xl bg-gradient-to-br from-green-50 to-emerald-100 text-7xl">
-                🥗
-              </div>
+            <div className="relative rounded-[2rem] border border-white bg-white/90 p-5 shadow-[0_20px_50px_rgba(35,101,45,0.12)] sm:p-7">
+             <div className="mb-6 h-28 overflow-hidden rounded-3xl">
+  <img
+    src="/image/healty_food.jpg"
+    alt="Bahan makanan sehat"
+    className="h-full w-full object-cover"
+  />
+</div>
               <h3 className="text-xl font-extrabold tracking-tight text-green-950">
                 Dari stok menjadi inspirasi
               </h3>

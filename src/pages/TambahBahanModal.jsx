@@ -111,6 +111,52 @@ const getCategoryIcon = (namaKategori) => {
 };
 
 // ======================================================
+// HELPER TANGGAL & ESTIMASI MASA SIMPAN
+// ======================================================
+
+// Format YYYY-MM-DD menurut zona waktu lokal
+const keISO = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${d}`;
+};
+
+const hariIni = () => keISO(new Date());
+
+const tambahHari = (iso, jumlahHari) => {
+  const [y, m, d] = iso.split("-").map(Number);
+
+  return keISO(new Date(y, m - 1, d + jumlahHari));
+};
+
+// YYYY-MM-DD -> DD/MM/YYYY (hanya untuk tampilan)
+const formatTampil = (iso) => {
+  if (!iso) return "-";
+
+  const [y, m, d] = iso.split("-");
+
+  return `${d}/${m}/${y}`;
+};
+
+// Perkiraan masa simpan (hari) berdasarkan kategori/nama bahan.
+// Idealnya nanti disimpan di kolom shelf_life_days pada ingredients_master.
+const estimasiHariSimpan = (bahan) => {
+  const teks = `${bahan.kategori} ${bahan.nama}`.toLowerCase();
+
+  if (/(ikan|udang|cumi|daging|ayam|sapi|hewani)/.test(teks)) return 3;
+  if (/(susu|dairy|keju|yogurt)/.test(teks)) return 7;
+  if (/(telur)/.test(teks)) return 21;
+  if (/(beras|tepung|karbo|kacang|serealia)/.test(teks)) return 180;
+  if (/(sayur|bayam|kangkung|sawi|daun)/.test(teks)) return 5;
+  if (/(buah|alpukat|pisang|pepaya)/.test(teks)) return 5;
+
+  return 7;
+};
+
+
+// ======================================================
 // KOMPONEN UTAMA
 // ======================================================
 
@@ -131,11 +177,21 @@ export default function TambahBahanModal() {
 
   const [satuan, setSatuan] = useState("gram");
 
+  // Tanggal masuk otomatis hari ini
   const [tanggalMasuk, setTanggalMasuk] =
-    useState("06/10/2026");
+    useState(hariIni());
 
-  const [tanggalKadaluarsa, setTanggalKadaluarsa] =
-    useState("10/10/2026");
+  const [ubahTanggalMasuk, setUbahTanggalMasuk] =
+    useState(false);
+
+  // Kedaluwarsa otomatis; pengguna boleh mengatur manual (opsional)
+  const [aturKedaluwarsa, setAturKedaluwarsa] =
+    useState(false);
+
+  const [
+    tanggalKedaluwarsaManual,
+    setTanggalKedaluwarsaManual,
+  ] = useState("");
 
   // ====================================================
   // DATA DARI DATABASE
@@ -383,37 +439,23 @@ export default function TambahBahanModal() {
   };
 
   // ====================================================
-  // HELPER KONVERSI TANGGAL
+  // ESTIMASI & HITUNG TANGGAL KEDALUWARSA
   // ====================================================
 
-  const ubahTanggalDatabase = (tanggal) => {
-    if (!tanggal) {
-      return null;
+  const estimasiHari = bahanTerpilih
+    ? estimasiHariSimpan(bahanTerpilih)
+    : 7;
+
+  const hitungKedaluwarsa = () => {
+    // Manual hanya dipakai kalau pengguna benar-benar mengisi
+    if (aturKedaluwarsa && tanggalKedaluwarsaManual) {
+      return tanggalKedaluwarsaManual;
     }
 
-    const bagian = tanggal.split("/");
-
-    if (bagian.length !== 3) {
-      throw new Error(
-        `Format tanggal "${tanggal}" harus DD/MM/YYYY`
-      );
-    }
-
-    const [hari, bulan, tahun] = bagian;
-
-    // Validasi sederhana
-    if (
-      !hari ||
-      !bulan ||
-      !tahun ||
-      tahun.length !== 4
-    ) {
-      throw new Error(
-        `Format tanggal "${tanggal}" harus DD/MM/YYYY`
-      );
-    }
-
-    return `${tahun}-${bulan}-${hari}`;
+    return tambahHari(
+      tanggalMasuk || hariIni(),
+      estimasiHari
+    );
   };
 
   // ====================================================
@@ -439,13 +481,13 @@ export default function TambahBahanModal() {
       return;
     }
 
-    // Pastikan tanggal diisi
-    if (
-      !tanggalMasuk ||
-      !tanggalKadaluarsa
-    ) {
+    // Tanggal masuk default hari ini, kedaluwarsa otomatis diestimasi
+    const masukFinal = tanggalMasuk || hariIni();
+    const kedaluwarsaFinal = hitungKedaluwarsa();
+
+    if (kedaluwarsaFinal < masukFinal) {
       setError(
-        "Tanggal masuk dan tanggal kedaluwarsa wajib diisi."
+        "Tanggal kedaluwarsa tidak boleh sebelum tanggal masuk."
       );
       return;
     }
@@ -474,20 +516,9 @@ export default function TambahBahanModal() {
         return;
       }
 
-      // ==================================================
-      // KONVERSI TANGGAL
-      // DD/MM/YYYY
-      // MENJADI
-      // YYYY-MM-DD
-      // ==================================================
-
-      const tanggalMasukDB =
-        ubahTanggalDatabase(tanggalMasuk);
-
-      const tanggalKadaluarsaDB =
-        ubahTanggalDatabase(
-          tanggalKadaluarsa
-        );
+      // Tanggal sudah dalam format YYYY-MM-DD (siap untuk database)
+      const tanggalMasukDB = masukFinal;
+      const tanggalKadaluarsaDB = kedaluwarsaFinal;
 
       // ==================================================
       // DATA YANG AKAN DISIMPAN
@@ -1149,109 +1180,129 @@ export default function TambahBahanModal() {
 
                 </div>
 
-                {/* TANGGAL MASUK */}
+                {/* TANGGAL KEDALUWARSA (OTOMATIS) */}
 
                 <div className="mt-3">
 
-                  <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
-                    Tanggal Masuk
-                  </label>
+                  {!aturKedaluwarsa ? (
+                    <p className="text-xs text-[#617887]">
+                      Perkiraan kedaluwarsa:{" "}
+                      <span className="font-semibold text-[#455968]">
+                        {formatTampil(hitungKedaluwarsa())}
+                      </span>
+                      {" "}(±{estimasiHari} hari, diatur otomatis)
+                      {" · "}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAturKedaluwarsa(true)
+                        }
+                        className="font-semibold text-[#159b68] hover:underline"
+                      >
+                        Ubah
+                      </button>
+                    </p>
+                  ) : (
+                    <>
+                      <div className="mb-1 flex items-center justify-between">
+                        <label className="text-xs font-semibold text-[#455968] sm:text-sm">
+                          Tanggal Kedaluwarsa
+                        </label>
 
-                  <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAturKedaluwarsa(false);
+                            setTanggalKedaluwarsaManual("");
+                          }}
+                          className="text-xs font-semibold text-[#159b68] hover:underline"
+                        >
+                          Pakai otomatis
+                        </button>
+                      </div>
 
-                    <input
-                      type="text"
-                      value={tanggalMasuk}
-                      onChange={(e) =>
-                        setTanggalMasuk(
-                          e.target.value
-                        )
-                      }
-                      placeholder="DD/MM/YYYY"
-                      className="
-                        h-10
-                        w-full
-                        rounded-[10px]
-                        border border-[#dce6eb]
-                        bg-white
-                        px-3
-                        pr-10
-                        text-sm
-                        text-[#24313d]
-                        outline-none
-                        focus:border-[#159b68]
-                        focus:ring-2
-                        focus:ring-[#159b68]/10
-                      "
-                      required
-                    />
-
-                    <CalendarDays
-                      size={16}
-                      className="
-                        pointer-events-none
-                        absolute right-3
-                        top-1/2
-                        -translate-y-1/2
-                        text-[#64798a]
-                      "
-                    />
-
-                  </div>
+                      <input
+                        type="date"
+                        min={tanggalMasuk}
+                        value={tanggalKedaluwarsaManual}
+                        onChange={(e) =>
+                          setTanggalKedaluwarsaManual(
+                            e.target.value
+                          )
+                        }
+                        className="
+                          h-10
+                          w-full
+                          rounded-[10px]
+                          border border-[#dce6eb]
+                          bg-white
+                          px-3
+                          text-sm
+                          text-[#24313d]
+                          outline-none
+                          focus:border-[#159b68]
+                          focus:ring-2
+                          focus:ring-[#159b68]/10
+                        "
+                      />
+                    </>
+                  )}
 
                 </div>
 
-                {/* TANGGAL KADALUARSA */}
+                {/* TANGGAL MASUK (DEFAULT HARI INI) */}
 
                 <div className="mt-3">
 
-                  <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
-                    Tanggal Kedaluwarsa
-                  </label>
+                  {!ubahTanggalMasuk ? (
+                    <p className="text-xs text-[#617887]">
+                      Dicatat masuk:{" "}
+                      <span className="font-semibold text-[#455968]">
+                        {tanggalMasuk === hariIni()
+                          ? "Hari ini"
+                          : formatTampil(tanggalMasuk)}
+                      </span>
+                      {" · "}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setUbahTanggalMasuk(true)
+                        }
+                        className="font-semibold text-[#159b68] hover:underline"
+                      >
+                        Ubah
+                      </button>
+                    </p>
+                  ) : (
+                    <>
+                      <label className="mb-1 block text-xs font-semibold text-[#455968] sm:text-sm">
+                        Tanggal Masuk
+                      </label>
 
-                  <div className="relative">
-
-                    <input
-                      type="text"
-                      value={
-                        tanggalKadaluarsa
-                      }
-                      onChange={(e) =>
-                        setTanggalKadaluarsa(
-                          e.target.value
-                        )
-                      }
-                      placeholder="DD/MM/YYYY"
-                      className="
-                        h-10
-                        w-full
-                        rounded-[10px]
-                        border border-[#dce6eb]
-                        bg-white
-                        px-3
-                        pr-10
-                        text-sm
-                        text-[#24313d]
-                        outline-none
-                        focus:border-[#159b68]
-                        focus:ring-2
-                        focus:ring-[#159b68]/10
-                      "
-                      required
-                    />
-
-                    <CalendarDays
-                      size={16}
-                      className="
-                        pointer-events-none
-                        absolute right-3
-                        top-1/2
-                        -translate-y-1/2
-                        text-[#64798a]
-                      "
-                    />
-
-                  </div>
+                      <input
+                        type="date"
+                        max={hariIni()}
+                        value={tanggalMasuk}
+                        onChange={(e) =>
+                          setTanggalMasuk(e.target.value)
+                        }
+                        className="
+                          h-10
+                          w-full
+                          rounded-[10px]
+                          border border-[#dce6eb]
+                          bg-white
+                          px-3
+                          text-sm
+                          text-[#24313d]
+                          outline-none
+                          focus:border-[#159b68]
+                          focus:ring-2
+                          focus:ring-[#159b68]/10
+                        "
+                      />
+                    </>
+                  )}
 
                 </div>
 

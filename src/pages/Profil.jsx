@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -16,7 +16,10 @@ import { supabase } from "../lib/supabaseClient";
 function Profil() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [profilUser, setProfilUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingFoto, setUploadingFoto] = useState(false);
+  const inputFotoRef = useRef(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -27,6 +30,20 @@ function Profil() {
           return;
         }
         setUser(data.user);
+
+        if (data.user?.id) {
+          const { data: profil, error: profilError } = await supabase
+            .from("users")
+            .select("id, nama, email, foto_profil")
+            .eq("id", data.user.id)
+            .maybeSingle();
+
+          if (profilError) {
+            console.error("Gagal mengambil profil user:", profilError);
+          } else {
+            setProfilUser(profil);
+          }
+        }
       } catch (error) {
         console.error("Terjadi kesalahan:", error);
       } finally {
@@ -39,18 +56,120 @@ function Profil() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const authUser = session?.user ?? null;
+      setUser(authUser);
+
+      if (!authUser) {
+        setProfilUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const nama =
+    profilUser?.nama ||
     user?.user_metadata?.nama ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     "Pengguna";
-  const email = user?.email || "-";
+  const email = profilUser?.email || user?.email || "-";
+  const fotoProfil = profilUser?.foto_profil || null;
+
+  const kompresFotoKeBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const gambar = new Image();
+
+        gambar.onload = () => {
+          const ukuranMaksimal = 500;
+          let lebar = gambar.width;
+          let tinggi = gambar.height;
+
+          if (lebar > tinggi && lebar > ukuranMaksimal) {
+            tinggi = Math.round((tinggi * ukuranMaksimal) / lebar);
+            lebar = ukuranMaksimal;
+          } else if (tinggi > ukuranMaksimal) {
+            lebar = Math.round((lebar * ukuranMaksimal) / tinggi);
+            tinggi = ukuranMaksimal;
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = lebar;
+          canvas.height = tinggi;
+
+          const context = canvas.getContext("2d");
+          if (!context) {
+            reject(new Error("Browser tidak dapat memproses foto."));
+            return;
+          }
+
+          context.drawImage(gambar, 0, 0, lebar, tinggi);
+          resolve(canvas.toDataURL("image/jpeg", 0.72));
+        };
+
+        gambar.onerror = () => reject(new Error("Foto tidak dapat dibaca."));
+        gambar.src = reader.result;
+      };
+
+      reader.onerror = () => reject(new Error("Gagal membaca file foto."));
+      reader.readAsDataURL(file);
+    });
+
+  const handlePilihFoto = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file || !user?.id) {
+      event.target.value = "";
+      return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      alert("Gunakan foto dengan format JPG, PNG, atau WebP.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Ukuran file foto maksimal 5 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    setUploadingFoto(true);
+
+    try {
+      const fotoBase64 = await kompresFotoKeBase64(file);
+
+      const { error } = await supabase
+        .from("users")
+        .update({
+          foto_profil: fotoBase64,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      // Tidak perlu .select().single().
+      // Setelah update berhasil, state lokal langsung diperbarui agar foto
+      // langsung tampil tanpa query tambahan.
+      setProfilUser((profilSebelumnya) => ({
+        ...profilSebelumnya,
+        foto_profil: fotoBase64,
+      }));
+
+      alert("Foto profil berhasil diperbarui.");
+    } catch (error) {
+      console.error("Gagal mengubah foto profil:", error);
+      alert(error?.message || "Foto profil gagal diperbarui.");
+    } finally {
+      setUploadingFoto(false);
+      event.target.value = "";
+    }
+  };
 
   const handleLogout = async () => {
     const yakin = window.confirm("Apakah kamu yakin ingin keluar?");
@@ -85,7 +204,28 @@ function Profil() {
       return;
     }
 
+    const { error: profilError } = await supabase
+      .from("users")
+      .update({
+        nama: namaBersih,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (profilError) {
+      console.error("Gagal memperbarui nama di tabel users:", profilError);
+      alert(
+        `Nama di akun Auth berubah, tetapi tabel users gagal diperbarui: ${profilError.message}`
+      );
+      setUser(data.user);
+      return;
+    }
+
     setUser(data.user);
+    setProfilUser((profilSebelumnya) => ({
+      ...profilSebelumnya,
+      nama: namaBersih,
+    }));
     alert("Nama profil berhasil diperbarui.");
   };
 
@@ -168,19 +308,41 @@ function Profil() {
           <div className="relative flex items-center gap-4 sm:gap-7">
             <div className="relative shrink-0">
               <div className="flex h-[92px] w-[92px] items-center justify-center overflow-hidden rounded-full border-4 border-white/90 bg-gradient-to-br from-[#e5f3e7] to-[#cfeBd4] shadow-xl shadow-black/20 ring-4 ring-white/20 sm:h-[116px] sm:w-[116px]">
-                <UserRound
-                  size={55}
-                  strokeWidth={1.5}
-                  className="text-[#2f8a45] sm:h-[68px] sm:w-[68px]"
-                />
+                {fotoProfil ? (
+                  <img
+                    src={fotoProfil}
+                    alt={`Foto profil ${nama}`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <UserRound
+                    size={55}
+                    strokeWidth={1.5}
+                    className="text-[#2f8a45] sm:h-[68px] sm:w-[68px]"
+                  />
+                )}
               </div>
+
+              <input
+                ref={inputFotoRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePilihFoto}
+                className="hidden"
+              />
+
               <button
                 type="button"
-                onClick={() => alert("Fitur ubah foto profil belum tersedia.")}
-                className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-white bg-gradient-to-br from-[#f79500] to-[#ffb020] text-white shadow-lg transition hover:scale-110 active:scale-95"
+                onClick={() => inputFotoRef.current?.click()}
+                disabled={uploadingFoto}
+                className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-white bg-gradient-to-br from-[#f79500] to-[#ffb020] text-white shadow-lg transition hover:scale-110 active:scale-95 disabled:cursor-wait disabled:opacity-70"
                 aria-label="Ubah foto profil"
               >
-                <Camera size={15} strokeWidth={2.2} />
+                {uploadingFoto ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Camera size={15} strokeWidth={2.2} />
+                )}
               </button>
             </div>
 

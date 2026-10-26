@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 const CHILD_STORAGE_KEY = "dapurCerdasSelectedChildId";
+const PREGNANCY_STORAGE_KEY = "dapurCerdasSelectedPregnancyId";
 const NUTRISI = [
   {
     nama: "Kalori",
@@ -265,6 +266,8 @@ function Nutrisi() {
 
   const [kehamilanTerkait, setKehamilanTerkait] = useState(null);
 
+  const [daftarKehamilan, setDaftarKehamilan] = useState([]);
+
   const [modeNutrisi, setModeNutrisi] = useState("anak");
 
   const [catatanMakanan, setCatatanMakanan] = useState([]);
@@ -315,6 +318,7 @@ function Nutrisi() {
       setDaftarAnak([]);
       setChildId("");
       setKehamilanTerkait(null);
+      setDaftarKehamilan([]);
       setCatatanMakanan([]);
       setModeNutrisi("anak");
       return;
@@ -341,6 +345,7 @@ function Nutrisi() {
       if (pregnancyError) throw pregnancyError;
       daftarKehamilan = data || [];
     }
+    setDaftarKehamilan(daftarKehamilan);
     // Ambil profil anak.
     const { data: profiles, error: profileError } = await supabase
       .from("children_profiles")
@@ -352,25 +357,46 @@ function Nutrisi() {
     if (profileError) throw profileError;
     const profilAnak = profiles || [];
     setDaftarAnak(profilAnak);
-    // Prioritas 1: kehamilan aktif -> pantau nutrisi ibu hamil.
+    // Pilih kehamilan tersimpan bila masih tersedia; jika tidak, prioritaskan
+    // kehamilan aktif lalu riwayat terbaru. Semua kehamilan tetap dapat dipilih.
+    let pregnancyIdTersimpan = "";
+    try {
+      pregnancyIdTersimpan = window.localStorage.getItem(PREGNANCY_STORAGE_KEY) || "";
+    } catch {
+      pregnancyIdTersimpan = "";
+    }
     const kehamilanAktif = daftarKehamilan.find((item) =>
       STATUS_KEHAMILAN_AKTIF.includes(
         String(item.status || "").toLowerCase().trim()
       )
     );
+    const kehamilanTerpilih =
+      daftarKehamilan.find((item) => String(item.id) === String(pregnancyIdTersimpan)) ||
+      kehamilanAktif ||
+      daftarKehamilan[0] ||
+      null;
+    setKehamilanTerkait(kehamilanTerpilih);
+    if (kehamilanTerpilih?.id) {
+      try {
+        window.localStorage.setItem(PREGNANCY_STORAGE_KEY, kehamilanTerpilih.id);
+      } catch {
+        // Penyimpanan pilihan hanya membantu mengingat pilihan terakhir.
+      }
+    }
+    // Kehamilan aktif menjadi tampilan awal, tetapi pengguna tetap bisa
+    // berpindah ke profil anak melalui pemilih mode di halaman Nutrisi.
     if (kehamilanAktif) {
       setModeNutrisi("ibu");
-      setKehamilanTerkait(kehamilanAktif);
-      setAnak(null);
-      setChildId("");
+      setAnak(profilAnak[0] || null);
+      setChildId(profilAnak[0]?.id || "");
       return;
     }
     // Belum ada kehamilan aktif dan belum ada profil anak.
     if (profilAnak.length === 0) {
-      setModeNutrisi("anak");
+      setModeNutrisi(kehamilanTerpilih ? "ibu" : "anak");
       setAnak(null);
       setChildId("");
-      setKehamilanTerkait(null);
+      setKehamilanTerkait(kehamilanTerpilih);
       setCatatanMakanan([]);
       return;
     }
@@ -428,10 +454,9 @@ function Nutrisi() {
     async (idRelasi, mode = "anak") => {
       if (!idRelasi) return [];
 
-      const enamHariLalu = new Date(hariIni);
-      enamHariLalu.setDate(enamHariLalu.getDate() - 6);
-
-      const mulai = enamHariLalu < awalBulan ? enamHariLalu : awalBulan;
+      // Ambil seluruh bulan berjalan agar total/tren bulanan tidak kehilangan
+      // catatan yang lebih lama dari tujuh hari terakhir.
+      const mulai = awalBulan;
       const tabel = mode !== "anak" ? "maternal_food_logs" : "food_logs";
       const kolomRelasi = mode !== "anak" ? "pregnancy_id" : "child_id";
       const kolomSelect =
@@ -444,7 +469,7 @@ function Nutrisi() {
         .select(kolomSelect)
         .eq(kolomRelasi, idRelasi)
         .gte("tanggal_konsumsi", formatTanggal(mulai))
-        .lte("tanggal_konsumsi", formatTanggal(akhirBulan))
+        .lte("tanggal_konsumsi", formatTanggal(hariIni))
         .order("tanggal_konsumsi", { ascending: true });
 
       if (foodError) throw foodError;
@@ -552,6 +577,39 @@ function Nutrisi() {
       umurBulan < 6 &&
       Boolean(pregnancyTerkait?.id);
     setModeNutrisi(ibuMenyusui ? "menyusui" : "anak");
+  };
+
+  const pilihKehamilan = (id) => {
+    const pilihan = daftarKehamilan.find((item) => String(item.id) === String(id));
+    if (!pilihan) return;
+    setKehamilanTerkait(pilihan);
+    setModeNutrisi("ibu");
+    setError("");
+    setCatatanMakanan([]);
+    try {
+      window.localStorage.setItem(PREGNANCY_STORAGE_KEY, pilihan.id);
+    } catch {
+      // Pemilihan tetap berfungsi tanpa localStorage.
+    }
+  };
+
+  const bukaModeAnak = async () => {
+    if (!daftarAnak.length) {
+      setModeNutrisi("anak");
+      setAnak(null);
+      setChildId("");
+      return;
+    }
+    const pilihan = daftarAnak.find((item) => String(item.id) === String(childId)) || daftarAnak[0];
+    await pilihAnak(pilihan.id);
+  };
+
+  const bukaModeIbu = () => {
+    if (!daftarKehamilan.length) return;
+    const pilihan = daftarKehamilan.find((item) => String(item.id) === String(kehamilanTerkait?.id)) ||
+      daftarKehamilan.find((item) => STATUS_KEHAMILAN_AKTIF.includes(String(item.status || "").toLowerCase().trim())) ||
+      daftarKehamilan[0];
+    pilihKehamilan(pilihan.id);
   };
 
   // TOTAL HARIAN
@@ -912,6 +970,22 @@ function Nutrisi() {
         <Header judul={modeNutrisi === "menyusui" ? "Nutrisi Ibu Menyusui" : "Nutrisi Ibu"} />
         <main className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-5 sm:px-6 sm:pt-6 lg:px-8">
           <ErrorBanner />
+          {(daftarKehamilan.length > 0 || daftarAnak.length > 0) && (
+            <section className="mb-5 flex flex-col gap-3 rounded-2xl border border-[#cfe4d2] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-[#0f3d1e]">Profil yang dipantau</p>
+                <p className="mt-1 text-xs text-slate-500">Pilih kehamilan atau beralih ke pemantauan nutrisi anak tanpa mencampur catatan.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {daftarKehamilan.length > 0 && (
+                  <select value={kehamilanTerkait?.id || ""} onChange={(e) => pilihKehamilan(e.target.value)} className="max-w-full rounded-xl border border-[#cfe4d2] bg-white px-3 py-2 text-xs font-semibold text-[#0f3d1e] outline-none focus:ring-2 focus:ring-[#7bd08f]" aria-label="Pilih kehamilan">
+                    {daftarKehamilan.map((item, index) => <option key={item.id} value={item.id}>{`Kehamilan ${index + 1} · ${item.status || "status tidak diketahui"} · HPHT ${item.hpht || "-"}`}</option>)}
+                  </select>
+                )}
+                {daftarAnak.length > 0 && <button type="button" onClick={bukaModeAnak} className="rounded-xl border border-[#cfe4d2] px-3 py-2 text-xs font-semibold text-[#0f3d1e] hover:bg-[#f3faf4]">Nutrisi Anak</button>}
+              </div>
+            </section>
+          )}
           <section className="relative overflow-hidden rounded-[28px] bg-[#0f3d1e] bg-[image:radial-gradient(560px_300px_at_100%_0%,rgba(226,170,60,0.30),transparent_60%),radial-gradient(520px_340px_at_0%_100%,rgba(70,176,106,0.40),transparent_60%),linear-gradient(135deg,#0f3d1e_0%,#17612d_100%)] p-6 text-white shadow-[0_30px_60px_-28px_rgba(15,61,30,0.75)] ring-1 ring-white/10 sm:p-8">
             <h2 className="font-sans text-2xl font-semibold tracking-tight sm:text-3xl">
               {modeNutrisi === "menyusui"
@@ -965,7 +1039,7 @@ function Nutrisi() {
             <p className="mt-4 max-w-2xl text-xs leading-relaxed text-white/75 sm:text-sm">
               {modeNutrisi === "menyusui"
                 ? "Pemantauan ini mencatat makanan ibu selama menyusui, bukan menghitung seluruh asupan ASI yang diterima bayi. Pertumbuhan anak tetap dipantau di halaman Si Kecil."
-                : `HPL: ${formatTanggalIndonesia(parseTanggal(kehamilanTerkait.hpl))}. Ringkasan hanya berdasarkan makanan yang dicatat, bukan seluruh asupan harian.`}
+                : `HPL: ${kehamilanTerkait.hpl ? formatTanggalIndonesia(parseTanggal(kehamilanTerkait.hpl)) : "Belum tersedia"}. Ringkasan hanya berdasarkan makanan yang dicatat, bukan seluruh asupan harian.`}
             </p>
           </section>
           <section className="mt-5 rounded-[24px] border border-white bg-white shadow-[0_1px_2px_rgba(20,48,27,0.05),0_18px_40px_-18px_rgba(20,48,27,0.18)] ring-1 ring-[#14301b]/5 p-5 sm:p-7">
@@ -1068,7 +1142,7 @@ function Nutrisi() {
   }
 
   // BELUM ADA PROFIL IBU HAMIL ATAU PROFIL ANAK
-  if (!anak) {
+  if (!anak && !(modeNutrisi === "ibu" && kehamilanTerkait)) {
     return (
       <div className="min-h-screen bg-[#eef5ef] bg-[image:radial-gradient(900px_480px_at_90%_-8%,#d8eedd_0%,transparent_60%),radial-gradient(700px_420px_at_-10%_35%,#f7f0d8_0%,transparent_55%)] bg-no-repeat font-sans text-[#16241a]">
         <Header judul="Nutrisi" />
@@ -1102,6 +1176,15 @@ function Nutrisi() {
       <Header judul="Nutrisi" />
       <main className="mx-auto w-full max-w-[1240px] px-4 pb-16 pt-5 sm:px-6 sm:pt-6 lg:px-8">
         <ErrorBanner />
+        {daftarKehamilan.length > 0 && (
+          <div className="mb-5 flex flex-col gap-2 rounded-2xl border border-[#cfe4d2] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-[#0f3d1e]">Pemantauan Nutrisi Anak</p>
+              <p className="mt-1 text-xs text-slate-500">Catatan anak dipisahkan dari catatan makanan ibu per kehamilan.</p>
+            </div>
+            <button type="button" onClick={bukaModeIbu} className="self-start rounded-xl border border-[#cfe4d2] px-3 py-2 text-xs font-semibold text-[#0f3d1e] hover:bg-[#f3faf4] sm:self-auto">Nutrisi Ibu / Kehamilan</button>
+          </div>
+        )}
         {/* HERO */}
         <section className="relative overflow-hidden rounded-[28px] bg-[#0f3d1e] bg-[image:radial-gradient(560px_300px_at_100%_0%,rgba(226,170,60,0.30),transparent_60%),radial-gradient(520px_340px_at_0%_100%,rgba(70,176,106,0.40),transparent_60%),linear-gradient(135deg,#0f3d1e_0%,#17612d_100%)] p-6 text-white shadow-[0_30px_60px_-28px_rgba(15,61,30,0.75)] ring-1 ring-white/10 sm:p-8">
           <h2 className="font-sans text-2xl font-semibold leading-tight tracking-tight sm:text-3xl lg:text-4xl">

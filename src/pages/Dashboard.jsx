@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 
@@ -7,6 +7,7 @@ import {
   UserCircle,
   AlertTriangle,
   ChevronRight,
+  ChevronLeft,
   Refrigerator,
   Plus,
   Sparkles,
@@ -183,6 +184,9 @@ function Dashboard() {
   const [bahan, setBahan] = useState([]);
   const [loadingBahan, setLoadingBahan] = useState(true);
   const [errorBahan, setErrorBahan] = useState("");
+
+  // Slider horizontal Ringkasan Bahan Kulkas
+  const sliderBahanRef = useRef(null);
 
   /* =======================================================
      STATE RESEP TERSIMPAN
@@ -477,6 +481,24 @@ function Dashboard() {
     });
   };
 
+  /* =======================================================
+     SLIDER RINGKASAN BAHAN KULKAS
+  ======================================================= */
+
+  const geserBahan = (arah) => {
+    if (!sliderBahanRef.current) return;
+
+    const lebarGeser = Math.max(
+      260,
+      Math.floor(sliderBahanRef.current.clientWidth * 0.8)
+    );
+
+    sliderBahanRef.current.scrollBy({
+      left: arah === "kanan" ? lebarGeser : -lebarGeser,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-b from-[#e6f4e8] via-[#f3f9f3] to-[#f8fbf8] font-jakarta text-[#202833]">
       {/* DEKORASI LATAR */}
@@ -623,7 +645,7 @@ function Dashboard() {
               </div>
 
               <h2 className="text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-                Halo, {namaUser}! 👋
+                Halo, {namaUser}!
               </h2>
 
               <p className="mt-3 max-w-md text-xs leading-relaxed text-white/85 sm:text-sm">
@@ -1020,28 +1042,57 @@ function Dashboard() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:max-w-[1120px] lg:grid-cols-5">
-            {loadingBahan ? (
-              <p className="col-span-full text-xs text-slate-400">
-                Memuat bahan kulkas...
-              </p>
-            ) : errorBahan ? (
-              <p className="col-span-full text-xs text-red-500">{errorBahan}</p>
-            ) : bahan.length === 0 ? (
-              <p className="col-span-full text-xs text-slate-400">
-                Belum ada bahan di stok kulkas.
-              </p>
-            ) : bahanRingkasan.length === 0 ? (
-              <p className="col-span-full text-xs text-slate-400">
-                Tidak ada bahan yang masih segar. Hapus bahan kedaluwarsa di
-                halaman Stok.
-              </p>
-            ) : (
-              bahanRingkasan.map((item) => (
-                <BahanCard key={item.id} item={item} />
-              ))
-            )}
-          </div>
+          {loadingBahan ? (
+            <p className="text-xs text-slate-400">Memuat bahan kulkas...</p>
+          ) : errorBahan ? (
+            <p className="text-xs text-red-500">{errorBahan}</p>
+          ) : bahan.length === 0 ? (
+            <p className="text-xs text-slate-400">
+              Belum ada bahan di stok kulkas.
+            </p>
+          ) : bahanRingkasan.length === 0 ? (
+            <p className="text-xs text-slate-400">
+              Tidak ada bahan yang masih segar. Hapus bahan kedaluwarsa di
+              halaman Stok.
+            </p>
+          ) : (
+            <div className="relative">
+              {/* Tombol geser kiri - tampil di tablet/desktop */}
+              <button
+                type="button"
+                onClick={() => geserBahan("kiri")}
+                aria-label="Geser bahan ke kiri"
+                className="absolute -left-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-green-100 bg-white text-[#1f7a35] shadow-lg transition hover:bg-green-50 active:scale-95 sm:flex"
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              {/* Slider bahan: swipe di HP, tombol kiri/kanan di desktop */}
+              <div
+                ref={sliderBahanRef}
+                className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-0.5 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {bahanRingkasan.map((item) => (
+                  <div
+                    key={item.id}
+                    className="w-[78%] min-w-[78%] snap-start sm:w-[42%] sm:min-w-[42%] md:w-[31%] md:min-w-[31%] lg:w-[23.5%] lg:min-w-[23.5%] xl:w-[19%] xl:min-w-[19%]"
+                  >
+                    <BahanCard item={item} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Tombol geser kanan - tampil di tablet/desktop */}
+              <button
+                type="button"
+                onClick={() => geserBahan("kanan")}
+                aria-label="Geser bahan ke kanan"
+                className="absolute -right-3 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-green-100 bg-white text-[#1f7a35] shadow-lg transition hover:bg-green-50 active:scale-95 sm:flex"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
 
           <button
             type="button"

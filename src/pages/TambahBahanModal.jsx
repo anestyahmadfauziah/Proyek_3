@@ -500,22 +500,53 @@ export default function TambahBahanModal() {
       // AMBIL USER YANG SEDANG LOGIN
       // ==================================================
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+const {
+  data: { user },
+  error: userError,
+} = await supabase.auth.getUser();
 
-      if (userError) {
-        throw userError;
-      }
+if (userError) {
+  console.error("ERROR AUTH:", userError);
+  throw userError;
+}
 
-      if (!user) {
-        setError(
-          "Silakan login terlebih dahulu."
-        );
-        return;
-      }
+if (!user) {
+  setError("Silakan login terlebih dahulu.");
+  return;
+}
 
+console.log("ID user login:", user.id);
+
+// DEBUG AUTH DAN KONEKSI SUPABASE
+console.log("ID AUTH:", user.id);
+console.log(
+  "SUPABASE URL:",
+  import.meta.env.VITE_SUPABASE_URL
+);
+
+// CEK USER DI public.users
+const {
+  data: userRows,
+  error: profileError,
+} = await supabase
+  .from("users")
+  .select("id, email")
+  .eq("id", user.id);
+
+console.log("ID user login:", user.id);
+console.log("HASIL QUERY USERS:", userRows);
+console.log("ERROR QUERY USERS:", profileError);
+
+if (profileError) {
+  setError("Gagal membaca profil: " + profileError.message);
+  return;
+}
+
+if (!userRows || userRows.length === 0) {
+  setError("Profil tidak terbaca. Periksa RLS atau koneksi Supabase.");
+  return;
+}
+// LANJUTKAN KODE dataStok DAN INSERT DI BAWAH SINI
       // Tanggal sudah dalam format YYYY-MM-DD (siap untuk database)
       const tanggalMasukDB = masukFinal;
       const tanggalKadaluarsaDB = kedaluwarsaFinal;

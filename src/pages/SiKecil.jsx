@@ -678,6 +678,38 @@ export default function SiKecil() {
             </div>
           )}
 
+          {kehamilan.length > 1 && (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {kehamilan.map((p, index) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelectedId(p.id)}
+                  aria-pressed={selectedId === p.id}
+                  className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+                    selectedId === p.id
+                      ? "border-[#2fa356] bg-[#f0faf2] ring-2 ring-[#2fa356]/15"
+                      : "border-[#e8efe9] bg-white hover:border-[#bcd9c3]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 text-[#176b26]">
+                      <Heart size={18} />
+                      <span className="text-sm font-bold">Kehamilan {kehamilan.length - index}</span>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${p.status === "hamil" ? "bg-[#e6f4e8] text-[#176b26]" : "bg-slate-100 text-slate-600"}`}>
+                      {p.status}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs text-slate-500">HPHT</p>
+                  <p className="mt-0.5 text-sm font-semibold text-[#16241a]">{formatTanggal(p.hpht)}</p>
+                  <p className="mt-2 text-xs text-slate-500">HPL: {formatTanggal(p.hpl)}</p>
+                  <p className="mt-3 text-xs font-semibold text-[#176b26]">{selectedId === p.id ? "Sedang dipilih" : "Pilih pemantauan"}</p>
+                </button>
+              ))}
+            </div>
+          )}
+
           {!selectedPregnancy ? (
             <div className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] p-8 text-center">
               <CalendarDays className="mx-auto box-content rounded-3xl p-4 bg-gradient-to-br from-[#e6f7ea] to-[#c9ecd3] text-[#176b26] ring-1 ring-white shadow-sm" size={32} />
@@ -758,6 +790,43 @@ export default function SiKecil() {
                   ))}
                 </select>
               </div>
+
+              {anak.length > 1 && (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {anak.map((a, index) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedAnakId(a.id);
+                        reload(selectedId, a.id);
+                      }}
+                      aria-pressed={selectedAnakId === a.id}
+                      className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+                        selectedAnakId === a.id
+                          ? "border-[#2fa356] bg-[#f0faf2] ring-2 ring-[#2fa356]/15"
+                          : "border-[#e8efe9] bg-white hover:border-[#bcd9c3]"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 text-[#176b26]">
+                          <Baby size={18} />
+                          <span className="text-sm font-bold">{a.nama || `Anak ${index + 1}`}</span>
+                        </div>
+                        {a.tanggal_lahir && hitungHari(a.tanggal_lahir) < 1000 ? (
+                          <span className="rounded-full bg-[#e6f4e8] px-2.5 py-1 text-[11px] font-semibold text-[#176b26]">1000 HPK</span>
+                        ) : (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Riwayat</span>
+                        )}
+                      </div>
+                      <p className="mt-3 text-xs text-slate-500">Usia</p>
+                      <p className="mt-0.5 text-sm font-semibold text-[#16241a]">{usiaAnak(a.tanggal_lahir)}</p>
+                      <p className="mt-2 text-xs text-slate-500">Lahir: {formatTanggal(a.tanggal_lahir)}</p>
+                      <p className="mt-3 text-xs font-semibold text-[#176b26]">{selectedAnakId === a.id ? "Sedang dipilih" : "Lihat detail anak"}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {selectedChild && (
                 <>

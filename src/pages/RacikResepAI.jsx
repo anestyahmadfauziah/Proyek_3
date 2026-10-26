@@ -221,6 +221,66 @@ async function requestAPI(path, options = {}) {
   return result;
 }
 
+
+function formatTanggalProfil(value) {
+  if (!value) return "Belum tersedia";
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function hitungUsiaKehamilan(hpht) {
+  if (!hpht) return "Belum tersedia";
+
+  const mulai = new Date(`${hpht}T00:00:00`);
+  const sekarang = new Date();
+
+  if (Number.isNaN(mulai.getTime()) || mulai > sekarang) {
+    return "Belum tersedia";
+  }
+
+  const selisihHari = Math.floor((sekarang - mulai) / 86400000);
+  const minggu = Math.floor(selisihHari / 7);
+  const hari = selisihHari % 7;
+
+  return `${minggu} minggu${hari > 0 ? ` ${hari} hari` : ""}`;
+}
+
+function hitungUsiaAnak(tanggalLahir) {
+  if (!tanggalLahir) return "Belum tersedia";
+
+  const lahir = new Date(`${tanggalLahir}T00:00:00`);
+  const sekarang = new Date();
+
+  if (Number.isNaN(lahir.getTime()) || lahir > sekarang) {
+    return "Belum tersedia";
+  }
+
+  let bulan =
+    (sekarang.getFullYear() - lahir.getFullYear()) * 12 +
+    (sekarang.getMonth() - lahir.getMonth());
+
+  if (sekarang.getDate() < lahir.getDate()) bulan -= 1;
+  bulan = Math.max(0, bulan);
+
+  if (bulan < 1) {
+    const hari = Math.max(0, Math.floor((sekarang - lahir) / 86400000));
+    return `${hari} hari`;
+  }
+
+  if (bulan < 12) return `${bulan} bulan`;
+
+  const tahun = Math.floor(bulan / 12);
+  const sisaBulan = bulan % 12;
+  return `${tahun} tahun${sisaBulan > 0 ? ` ${sisaBulan} bulan` : ""}`;
+}
+
 export default function RacikResepAI() {
   const navigate = useNavigate();
 
@@ -229,8 +289,10 @@ export default function RacikResepAI() {
   const [bahanTerpilih, setBahanTerpilih] = useState([]);
   const [kategoriAktif, setKategoriAktif] = useState("Semua");
   const [pencarian, setPencarian] = useState("");
-  const [targetResep, setTargetResep] = useState("balita");
+  const [halamanBahan, setHalamanBahan] = useState(1);
+  const [targetResep, setTargetResep] = useState("");
   const [jumlahPorsi, setJumlahPorsi] = useState(2);
+  const [anakTerpilih, setAnakTerpilih] = useState("");
 
   const [resepAI, setResepAI] = useState(null);
   const [langkahAktif, setLangkahAktif] = useState(0);
@@ -245,6 +307,12 @@ export default function RacikResepAI() {
   const [resepSudahDisimpan, setResepSudahDisimpan] = useState(false);
   const [pesanSimpan, setPesanSimpan] = useState("");
   const [errorSimpan, setErrorSimpan] = useState("");
+
+  // STATE PENCATATAN NUTRISI OTOMATIS SETELAH SELESAI MEMASAK
+  const [sedangMencatatNutrisi, setSedangMencatatNutrisi] = useState(false);
+  const [nutrisiSudahDicatat, setNutrisiSudahDicatat] = useState(false);
+  const [pesanNutrisi, setPesanNutrisi] = useState("");
+  const [errorNutrisi, setErrorNutrisi] = useState("");
 
   const [profilKeluarga, setProfilKeluarga] = useState({
     ibu: null,
@@ -272,9 +340,35 @@ export default function RacikResepAI() {
         throw new Error("Silakan login untuk mengambil profil keluarga.");
       }
 
+      // Ambil profil ibu. ID profil ibu dibutuhkan untuk mencari pregnancies.
+      const { data: profilIbu, error: ibuError } = await supabase
+        .from("maternal_profiles")
+        .select("id, user_id, nama_ibu")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (ibuError) throw ibuError;
+
+      // Ambil seluruh riwayat kehamilan milik profil ibu.
+      let dataKehamilan = [];
+      if (profilIbu?.id) {
+        const { data: kehamilan, error: kehamilanError } = await supabase
+          .from("pregnancies")
+          .select(
+            "id, mother_id, hpht, hpl, tanggal_persalinan, status, created_at"
+          )
+          .eq("mother_id", profilIbu.id)
+          .order("created_at", { ascending: false });
+
+        if (kehamilanError) throw kehamilanError;
+        dataKehamilan = kehamilan || [];
+      }
+
       const { data: anak, error: anakError } = await supabase
         .from("children_profiles")
-        .select("id, user_id, nama, jenis_kelamin, tanggal_lahir, hpht, hpl")
+        .select(
+          "id, user_id, nama, jenis_kelamin, tanggal_lahir, hpht, hpl, pregnancy_id, created_at"
+        )
         .eq("user_id", user.id)
         .order("tanggal_lahir", { ascending: false });
 
@@ -282,16 +376,17 @@ export default function RacikResepAI() {
 
       const daftarAnak = anak || [];
 
-      // Baris dengan HPHT/HPL dapat digunakan sebagai petunjuk
-      // bahwa data kehamilan pernah dicatat.
-      const dataKehamilan = daftarAnak.filter((item) => item.hpht || item.hpl);
-
       setProfilKeluarga({
-        ibu: {
-          user_id: user.id,
-        },
+        ibu: profilIbu || null,
         kehamilan: dataKehamilan,
         anak: daftarAnak,
+      });
+
+      // Jika hanya ada satu anak, pilih otomatis. Jika lebih dari satu,
+      // pengguna memilih sendiri profil Si Kecil yang menjadi target resep.
+      setAnakTerpilih((previous) => {
+        if (daftarAnak.length === 1) return daftarAnak[0].id;
+        return daftarAnak.some((item) => item.id === previous) ? previous : "";
       });
     } catch (error) {
       console.error("Gagal mengambil profil keluarga:", error);
@@ -376,6 +471,87 @@ export default function RacikResepAI() {
     [bahanData, bahanTerpilih]
   );
 
+  // Pagination bahan: maksimal 6 bahan per halaman agar tampilan tetap ringkas.
+  const JUMLAH_BAHAN_PER_HALAMAN = 6;
+  const totalHalamanBahan = Math.max(
+    1,
+    Math.ceil(bahanFiltered.length / JUMLAH_BAHAN_PER_HALAMAN)
+  );
+
+  const bahanDitampilkan = useMemo(() => {
+    const mulai = (halamanBahan - 1) * JUMLAH_BAHAN_PER_HALAMAN;
+    return bahanFiltered.slice(mulai, mulai + JUMLAH_BAHAN_PER_HALAMAN);
+  }, [bahanFiltered, halamanBahan]);
+
+  // Saat pencarian atau kategori berubah, kembali ke halaman pertama.
+  useEffect(() => {
+    setHalamanBahan(1);
+  }, [kategoriAktif, pencarian]);
+
+  // Jaga nomor halaman tetap valid jika jumlah hasil berubah.
+  useEffect(() => {
+    if (halamanBahan > totalHalamanBahan) {
+      setHalamanBahan(totalHalamanBahan);
+    }
+  }, [halamanBahan, totalHalamanBahan]);
+
+  // Kehamilan aktif digunakan untuk target Ibu Hamil.
+  const kehamilanAktif = useMemo(
+    () =>
+      profilKeluarga.kehamilan.find(
+        (item) => String(item.status || "").toLowerCase().trim() === "hamil"
+      ) || null,
+    [profilKeluarga.kehamilan]
+  );
+
+  // Untuk Ibu Menyusui, prioritaskan pregnancy_id yang terkait dengan anak
+  // termuda berusia kurang dari 6 bulan. Jika tidak ada, gunakan riwayat
+  // kehamilan berstatus lahir terbaru.
+  const kehamilanMenyusui = useMemo(() => {
+    const sekarang = new Date();
+
+    const anakMenyusui = profilKeluarga.anak.find((anak) => {
+      if (!anak?.tanggal_lahir || !anak?.pregnancy_id) return false;
+
+      const lahir = new Date(`${anak.tanggal_lahir}T00:00:00`);
+      if (Number.isNaN(lahir.getTime())) return false;
+
+      let umurBulan =
+        (sekarang.getFullYear() - lahir.getFullYear()) * 12 +
+        (sekarang.getMonth() - lahir.getMonth());
+
+      if (sekarang.getDate() < lahir.getDate()) umurBulan -= 1;
+      return umurBulan >= 0 && umurBulan < 6;
+    });
+
+    if (anakMenyusui?.pregnancy_id) {
+      const terkait = profilKeluarga.kehamilan.find(
+        (item) => String(item.id) === String(anakMenyusui.pregnancy_id)
+      );
+      if (terkait) return terkait;
+    }
+
+    return (
+      profilKeluarga.kehamilan.find(
+        (item) => String(item.status || "").toLowerCase().trim() === "lahir"
+      ) || null
+    );
+  }, [profilKeluarga.anak, profilKeluarga.kehamilan]);
+
+  // Profil anak yang terkait dengan masa menyusui, hanya untuk ditampilkan.
+  // Tidak mengubah logika pregnancy_id yang sudah digunakan untuk pencatatan nutrisi.
+  const anakMenyusuiAktif = useMemo(() => {
+    if (!kehamilanMenyusui?.id) return null;
+
+    return (
+      profilKeluarga.anak.find(
+        (anak) =>
+          anak?.pregnancy_id &&
+          String(anak.pregnancy_id) === String(kehamilanMenyusui.id)
+      ) || null
+    );
+  }, [profilKeluarga.anak, kehamilanMenyusui]);
+
   function toggleBahan(id) {
     setErrorAI("");
 
@@ -406,6 +582,42 @@ export default function RacikResepAI() {
       return;
     }
 
+    if (!targetResep) {
+      setErrorAI("Pilih tujuan resep terlebih dahulu.");
+      setStep(2);
+      return;
+    }
+
+    if (
+      targetResep === "balita" &&
+      profilKeluarga.anak.length > 0 &&
+      !anakTerpilih
+    ) {
+      setErrorAI("Pilih profil Si Kecil yang akan dibuatkan resep.");
+      setStep(2);
+      return;
+    }
+
+    if (targetResep === "ibu_hamil" && !kehamilanAktif) {
+      setErrorAI(
+        "Data kehamilan aktif tidak ditemukan. Pastikan profil ibu memiliki kehamilan dengan status hamil."
+      );
+      setStep(2);
+      return;
+    }
+
+    if (targetResep === "ibu_menyusui" && !kehamilanMenyusui) {
+      setErrorAI(
+        "Data kehamilan/persalinan untuk ibu menyusui tidak ditemukan. Pastikan anak terhubung ke pregnancy_id atau terdapat riwayat kehamilan berstatus lahir."
+      );
+      setStep(2);
+      return;
+    }
+
+    const profilAnakTerpilih = profilKeluarga.anak.find(
+      (anak) => anak.id === anakTerpilih
+    );
+
     setSedangMeracik(true);
     setErrorAI("");
     setResepAI(null);
@@ -424,7 +636,10 @@ export default function RacikResepAI() {
           profil_keluarga: {
             ibu: profilKeluarga.ibu,
             kehamilan: profilKeluarga.kehamilan,
-            anak: profilKeluarga.anak,
+            anak:
+              targetResep === "balita" && profilAnakTerpilih
+                ? [profilAnakTerpilih]
+                : profilKeluarga.anak,
           },
         }),
       });
@@ -519,9 +734,127 @@ export default function RacikResepAI() {
     }
   }
 
+  async function catatNutrisiSetelahMemasak() {
+    if (!resepAI || nutrisiSudahDicatat || sedangMencatatNutrisi) return;
+
+    setSedangMencatatNutrisi(true);
+    setErrorNutrisi("");
+    setPesanNutrisi("");
+
+    try {
+      // Target Bebas selesai memasak tanpa membuat catatan nutrisi.
+      if (targetResep === "bebas") {
+        setNutrisiSudahDicatat(true);
+        setPesanNutrisi(
+          "Masakan selesai. Target Bebas tidak dimasukkan ke catatan Nutrisi."
+        );
+        return;
+      }
+
+      // Nutrisi AI adalah total seluruh resep. Yang dicatat adalah 1 porsi.
+      const totalPorsi = Math.max(
+        1,
+        Number(resepAI.porsi ?? jumlahPorsi ?? 1) || 1
+      );
+      const nutrisi = resepAI.nutrisi ?? {};
+      const perPorsi = (nilai) =>
+        Number((Math.max(0, Number(nilai) || 0) / totalPorsi).toFixed(2));
+
+      const sekarang = new Date();
+      const tanggalKonsumsi = [
+        sekarang.getFullYear(),
+        String(sekarang.getMonth() + 1).padStart(2, "0"),
+        String(sekarang.getDate()).padStart(2, "0"),
+      ].join("-");
+
+      const jam = sekarang.getHours();
+      const waktuMakan =
+        jam < 10
+          ? "Sarapan"
+          : jam < 14
+            ? "Makan Siang"
+            : jam < 18
+              ? "Camilan"
+              : "Makan Malam";
+
+      const dataNutrisi = {
+        nama_makanan: resepAI.nama_resep,
+        tanggal_konsumsi: tanggalKonsumsi,
+        waktu_makan: waktuMakan,
+        porsi: 1,
+        kalori_kcal: perPorsi(nutrisi.kalori),
+        protein_g: perPorsi(nutrisi.protein),
+        karbohidrat_g: perPorsi(nutrisi.karbohidrat),
+        lemak_g: perPorsi(nutrisi.lemak),
+        serat_g: perPorsi(nutrisi.serat),
+      };
+
+      if (targetResep === "balita") {
+        const anak = profilKeluarga.anak.find(
+          (item) => String(item.id) === String(anakTerpilih)
+        );
+
+        if (!anak) {
+          throw new Error("Profil Si Kecil yang dipilih tidak ditemukan.");
+        }
+
+        const { error } = await supabase.from("food_logs").insert({
+          child_id: anak.id,
+          ...dataNutrisi,
+        });
+
+        if (error) throw error;
+
+        setNutrisiSudahDicatat(true);
+        setPesanNutrisi(
+          `1 porsi ${resepAI.nama_resep} tercatat pada Nutrisi ${anak.nama || "Si Kecil"}.`
+        );
+        return;
+      }
+
+      if (targetResep === "ibu_hamil" || targetResep === "ibu_menyusui") {
+        const kehamilan =
+          targetResep === "ibu_hamil" ? kehamilanAktif : kehamilanMenyusui;
+
+        if (!kehamilan?.id) {
+          throw new Error(
+            targetResep === "ibu_hamil"
+              ? "Kehamilan aktif tidak ditemukan."
+              : "Riwayat kehamilan yang terkait dengan masa menyusui tidak ditemukan."
+          );
+        }
+
+        const { error } = await supabase.from("maternal_food_logs").insert({
+          pregnancy_id: kehamilan.id,
+          ...dataNutrisi,
+        });
+
+        if (error) throw error;
+
+        setNutrisiSudahDicatat(true);
+        setPesanNutrisi(
+          `1 porsi ${resepAI.nama_resep} tercatat pada Nutrisi ${
+            targetResep === "ibu_hamil" ? "Ibu Hamil" : "Ibu Menyusui"
+          }.`
+        );
+      }
+    } catch (error) {
+      console.error("Gagal mencatat nutrisi setelah memasak:", error);
+      setErrorNutrisi(
+        error?.message ||
+          "Masakan selesai, tetapi data nutrisi belum berhasil dicatat."
+      );
+    } finally {
+      setSedangMencatatNutrisi(false);
+    }
+  }
+
   function mulaiMemasak() {
     setLangkahAktif(0);
     setLangkahSelesai([]);
+    setNutrisiSudahDicatat(false);
+    setPesanNutrisi("");
+    setErrorNutrisi("");
     setStep(5);
   }
 
@@ -534,6 +867,10 @@ export default function RacikResepAI() {
     setResepSudahDisimpan(false);
     setPesanSimpan("");
     setErrorSimpan("");
+    setSedangMencatatNutrisi(false);
+    setNutrisiSudahDicatat(false);
+    setPesanNutrisi("");
+    setErrorNutrisi("");
   }
 
   function toggleLangkahSelesai(index) {
@@ -549,6 +886,8 @@ export default function RacikResepAI() {
     totalLangkah > 0
       ? Math.round((langkahSelesai.length / totalLangkah) * 100)
       : 0;
+
+
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-b from-[#e6f4e8] via-[#f3f9f3] to-[#f8fbf8] font-jakarta text-gray-800">
@@ -841,7 +1180,7 @@ export default function RacikResepAI() {
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {bahanFiltered.map((item) => {
+                {bahanDitampilkan.map((item) => {
                   const selected = bahanTerpilih.includes(item.id);
 
                   return (
@@ -862,7 +1201,21 @@ export default function RacikResepAI() {
                             : "bg-green-50"
                         }`}
                       >
-                        {item.emoji}
+                        {item.image_path ? (
+                    <img
+                      src={item.image_path}
+                      alt={item.nama}
+                      className="h-full w-full rounded-2xl object-contain p-1"
+                      loading="lazy"
+                      onError={() => {
+                        console.log("Gambar gagal:", item.nama, item.image_path);
+                      }}
+                    />
+                  ) : (
+                    <span className="text-xs text-gray-400">
+                      Tidak ada gambar
+                    </span>
+                  )}
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -894,6 +1247,42 @@ export default function RacikResepAI() {
                 })}
               </div>
             )}
+
+            {!memuatBahan &&
+              bahanFiltered.length > 0 &&
+              totalHalamanBahan > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHalamanBahan((halaman) => Math.max(1, halaman - 1))
+                    }
+                    disabled={halamanBahan === 1}
+                    aria-label="Halaman bahan sebelumnya"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-green-200 bg-white text-green-800 shadow-sm transition hover:bg-green-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    <ArrowLeft size={16} />
+                  </button>
+
+                  <div className="min-w-[74px] rounded-xl border border-green-100 bg-green-50 px-3 py-2 text-center text-xs font-extrabold text-green-800">
+                    {halamanBahan} / {totalHalamanBahan}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHalamanBahan((halaman) =>
+                        Math.min(totalHalamanBahan, halaman + 1)
+                      )
+                    }
+                    disabled={halamanBahan === totalHalamanBahan}
+                    aria-label="Halaman bahan berikutnya"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-green-200 bg-white text-green-800 shadow-sm transition hover:bg-green-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              )}
 
             <div className="mt-8 rounded-3xl border border-white bg-white/90 p-5 shadow-[0_8px_24px_rgba(35,101,45,0.08)]">
               <div className="flex items-center justify-between gap-3">
@@ -945,7 +1334,14 @@ export default function RacikResepAI() {
                       <button
                         key={target.value}
                         type="button"
-                        onClick={() => setTargetResep(target.value)}
+                        onClick={() => {
+                          setTargetResep(target.value);
+                          setErrorAI("");
+
+                          if (target.value !== "balita") {
+                            setAnakTerpilih("");
+                          }
+                        }}
                         className={`rounded-2xl border p-4 text-left transition duration-200 hover:-translate-y-0.5 ${
                           selected
                             ? "border-green-600 bg-gradient-to-br from-green-50 to-emerald-50 shadow-md ring-4 ring-green-100"
@@ -970,8 +1366,163 @@ export default function RacikResepAI() {
                   })}
                 </div>
 
-                {/* PROFIL KELUARGA */}
-                <div className="mt-4 rounded-2xl border border-green-100 bg-gradient-to-br from-green-50 to-emerald-50/60 p-4">
+                {/* PROFIL IBU - MUNCUL SETELAH IBU HAMIL / IBU MENYUSUI DIPILIH */}
+                {(targetResep === "ibu_hamil" ||
+                  targetResep === "ibu_menyusui") && (
+                  <div className="mt-4 rounded-2xl border border-green-100 bg-gradient-to-br from-green-50 to-emerald-50/60 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-green-700 shadow-sm">
+                        <Heart size={20} />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-extrabold text-green-950">
+                          {targetResep === "ibu_hamil"
+                            ? "Profil Ibu Hamil"
+                            : "Profil Ibu Menyusui"}
+                        </h4>
+
+                        {memuatProfilKeluarga ? (
+                          <p className="mt-1 text-sm text-gray-600">
+                            Memuat profil ibu...
+                          </p>
+                        ) : errorProfilKeluarga ? (
+                          <div>
+                            <p className="mt-1 break-words text-sm text-red-700">
+                              {errorProfilKeluarga}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={ambilProfilKeluarga}
+                              className="mt-2 text-sm font-bold text-green-800 underline"
+                            >
+                              Muat ulang profil
+                            </button>
+                          </div>
+                        ) : !profilKeluarga.ibu ? (
+                          <p className="mt-2 text-xs font-medium text-amber-800">
+                            Profil ibu belum tersedia. Lengkapi profil ibu terlebih
+                            dahulu agar resep dapat disesuaikan.
+                          </p>
+                        ) : (
+                          <div className="mt-3 rounded-xl border border-green-100 bg-white p-3 shadow-sm">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-bold text-gray-800">
+                                  {profilKeluarga.ibu.nama_ibu ||
+                                    "Nama ibu belum diisi"}
+                                </p>
+                                <p className="mt-1 text-xs font-bold text-green-700">
+                                  {targetResep === "ibu_hamil"
+                                    ? "Ibu Hamil"
+                                    : "Ibu Menyusui"}
+                                </p>
+                              </div>
+
+                              <div
+                                className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-green-700 bg-green-700 text-white"
+                                aria-hidden="true"
+                              >
+                                <Check size={13} strokeWidth={3} />
+                              </div>
+                            </div>
+
+                            {targetResep === "ibu_hamil" ? (
+                              kehamilanAktif ? (
+                                <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-gray-600 sm:grid-cols-3">
+                                  <div className="rounded-xl bg-green-50 p-2.5">
+                                    <p className="font-semibold text-gray-500">HPHT</p>
+                                    <p className="mt-1 font-bold text-gray-800">
+                                      {formatTanggalProfil(kehamilanAktif.hpht)}
+                                    </p>
+                                  </div>
+                                  <div className="rounded-xl bg-green-50 p-2.5">
+                                    <p className="font-semibold text-gray-500">HPL</p>
+                                    <p className="mt-1 font-bold text-gray-800">
+                                      {formatTanggalProfil(kehamilanAktif.hpl)}
+                                    </p>
+                                  </div>
+                                  <div className="rounded-xl bg-green-50 p-2.5">
+                                    <p className="font-semibold text-gray-500">
+                                      Usia kehamilan
+                                    </p>
+                                    <p className="mt-1 font-bold text-gray-800">
+                                      {hitungUsiaKehamilan(kehamilanAktif.hpht)}
+                                    </p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="mt-3 text-xs font-medium text-amber-800">
+                                  Data kehamilan aktif belum ditemukan. Pastikan
+                                  terdapat data kehamilan dengan status hamil.
+                                </p>
+                              )
+                            ) : kehamilanMenyusui ? (
+                              <>
+                                <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-gray-600 sm:grid-cols-2">
+                                  <div className="rounded-xl bg-green-50 p-2.5">
+                                    <p className="font-semibold text-gray-500">
+                                      Tanggal persalinan
+                                    </p>
+                                    <p className="mt-1 font-bold text-gray-800">
+                                      {formatTanggalProfil(
+                                        kehamilanMenyusui.tanggal_persalinan
+                                      )}
+                                    </p>
+                                  </div>
+                                  <div className="rounded-xl bg-green-50 p-2.5">
+                                    <p className="font-semibold text-gray-500">
+                                      Status kehamilan
+                                    </p>
+                                    <p className="mt-1 font-bold capitalize text-gray-800">
+                                      {kehamilanMenyusui.status || "lahir"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {anakMenyusuiAktif && (
+                                  <div className="mt-2 rounded-xl bg-emerald-50 p-2.5 text-xs text-gray-600">
+                                    <p className="font-semibold text-gray-500">
+                                      Si Kecil yang terkait
+                                    </p>
+                                    <p className="mt-1 font-bold text-gray-800">
+                                      {anakMenyusuiAktif.nama ||
+                                        "Nama anak belum diisi"}
+                                    </p>
+                                    <p className="mt-1">
+                                      Lahir:{" "}
+                                      <span className="font-semibold text-gray-700">
+                                        {formatTanggalProfil(
+                                          anakMenyusuiAktif.tanggal_lahir
+                                        )}
+                                      </span>
+                                      {" • "}Usia:{" "}
+                                      <span className="font-semibold text-gray-700">
+                                        {hitungUsiaAnak(
+                                          anakMenyusuiAktif.tanggal_lahir
+                                        )}
+                                      </span>
+                                    </p>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <p className="mt-3 text-xs font-medium text-amber-800">
+                                Data persalinan untuk masa menyusui belum ditemukan.
+                                Pastikan anak terhubung ke pregnancy_id atau terdapat
+                                riwayat kehamilan berstatus lahir.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* PROFIL KELUARGA - HANYA MUNCUL SETELAH BALITA DIPILIH */}
+                {targetResep === "balita" && (
+                  <div className="mt-4 rounded-2xl border border-green-100 bg-gradient-to-br from-green-50 to-emerald-50/60 p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-green-700 shadow-sm">
                       <Users size={20} />
@@ -1009,31 +1560,83 @@ export default function RacikResepAI() {
 
                           {profilKeluarga.anak.length > 0 && (
                             <div className="mt-3 space-y-2">
-                              {profilKeluarga.anak.map((anak) => (
-                                <div
-                                  key={anak.id}
-                                  className="rounded-xl border border-green-100 bg-white p-3 shadow-sm"
-                                >
-                                  <p className="font-bold text-gray-800">
-                                    {anak.nama || "Nama belum diisi"}
-                                  </p>
+                              {profilKeluarga.anak.map((anak) => {
+                                const dipilih = anakTerpilih === anak.id;
+                                const dapatDipilih = targetResep === "balita";
 
-                                  <p className="mt-1 text-xs text-gray-500">
-                                    Tanggal lahir:{" "}
-                                    {anak.tanggal_lahir || "Belum tersedia"}
-                                  </p>
+                                return (
+                                  <button
+                                    key={anak.id}
+                                    type="button"
+                                    onClick={() => {
+                                      if (!dapatDipilih) return;
+                                      setAnakTerpilih(anak.id);
+                                      setErrorAI("");
+                                    }}
+                                    disabled={!dapatDipilih}
+                                    className={`w-full rounded-xl border bg-white p-3 text-left shadow-sm transition ${
+                                      dapatDipilih && dipilih
+                                        ? "border-green-600 ring-2 ring-green-100"
+                                        : "border-green-100"
+                                    } ${
+                                      dapatDipilih
+                                        ? "cursor-pointer hover:border-green-300 hover:bg-green-50/40"
+                                        : "cursor-default"
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-gray-800">
+                                          {anak.nama || "Nama belum diisi"}
+                                        </p>
 
-                                  {(anak.hpht || anak.hpl) && (
-                                    <p className="mt-1 text-xs text-gray-500">
-                                      {anak.hpht ? `HPHT: ${anak.hpht}` : ""}
-                                      {anak.hpht && anak.hpl ? " • " : ""}
-                                      {anak.hpl ? `HPL: ${anak.hpl}` : ""}
-                                    </p>
-                                  )}
-                                </div>
-                              ))}
+                                        <p className="mt-1 text-xs text-gray-500">
+                                          Tanggal lahir:{" "}
+                                          {anak.tanggal_lahir || "Belum tersedia"}
+                                        </p>
+
+                                        {(anak.hpht || anak.hpl) && (
+                                          <p className="mt-1 text-xs text-gray-500">
+                                            {anak.hpht ? `HPHT: ${anak.hpht}` : ""}
+                                            {anak.hpht && anak.hpl ? " • " : ""}
+                                            {anak.hpl ? `HPL: ${anak.hpl}` : ""}
+                                          </p>
+                                        )}
+                                      </div>
+
+                                      {dapatDipilih && (
+                                        <div
+                                          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                                            dipilih
+                                              ? "border-green-700 bg-green-700 text-white"
+                                              : "border-gray-300 bg-white text-transparent"
+                                          }`}
+                                          aria-hidden="true"
+                                        >
+                                          <Check size={13} strokeWidth={3} />
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {dapatDipilih && dipilih && (
+                                      <p className="mt-2 text-xs font-bold text-green-700">
+                                        Dipilih untuk resep balita
+                                      </p>
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
+
+                          {targetResep === "balita" &&
+                            profilKeluarga.anak.length > 1 &&
+                            !anakTerpilih && (
+                              <p className="mt-2 text-xs font-medium text-amber-800">
+                                Pilih salah satu profil Si Kecil untuk menyesuaikan
+                                resep dengan anak yang akan makan.
+                              </p>
+                            )}
 
                           {targetResep === "balita" &&
                             profilKeluarga.anak.length === 0 && (
@@ -1046,7 +1649,8 @@ export default function RacikResepAI() {
                       )}
                     </div>
                   </div>
-                </div>
+                  </div>
+                )}
               </div>
 
               <div className="rounded-3xl border border-white bg-white/90 p-5 shadow-[0_8px_24px_rgba(35,101,45,0.08)] sm:p-6">
@@ -1104,7 +1708,14 @@ export default function RacikResepAI() {
               <button
                 type="button"
                 onClick={handleBuatResep}
-                disabled={bahanTerpilih.length === 0 || memuatBahan}
+                disabled={
+                  bahanTerpilih.length === 0 ||
+                  memuatBahan ||
+                  !targetResep ||
+                  (targetResep === "balita" &&
+                    profilKeluarga.anak.length > 0 &&
+                    !anakTerpilih)
+                }
                 className="group inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-green-700 to-emerald-600 px-7 py-4 font-extrabold text-white shadow-xl shadow-green-900/20 transition hover:-translate-y-0.5 hover:shadow-2xl active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
               >
                 <Sparkles size={18} />
@@ -1520,6 +2131,45 @@ export default function RacikResepAI() {
                   <p className="mt-2 text-sm text-gray-600">
                     Selamat menikmati hidanganmu bersama keluarga.
                   </p>
+
+                  {!nutrisiSudahDicatat && !errorNutrisi && (
+                    <button
+                      type="button"
+                      onClick={catatNutrisiSetelahMemasak}
+                      disabled={sedangMencatatNutrisi}
+                      className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-green-700 to-emerald-600 px-6 py-3 font-extrabold text-white shadow-lg shadow-green-900/20 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {sedangMencatatNutrisi ? (
+                        <LoaderCircle size={17} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={17} />
+                      )}
+                      {sedangMencatatNutrisi
+                        ? "Menyelesaikan..."
+                        : "Selesai Memasak"}
+                    </button>
+                  )}
+
+                  {pesanNutrisi && (
+                    <p className="mx-auto mt-3 max-w-lg rounded-2xl border border-green-200 bg-white p-3 text-sm font-semibold text-green-800 shadow-sm">
+                      {pesanNutrisi}
+                    </p>
+                  )}
+
+                  {errorNutrisi && (
+                    <div className="mx-auto mt-3 max-w-lg rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      <p className="font-bold">Proses selesai belum berhasil disimpan.</p>
+                      <p className="mt-1">{errorNutrisi}</p>
+                      <button
+                        type="button"
+                        onClick={catatNutrisiSetelahMemasak}
+                        disabled={sedangMencatatNutrisi}
+                        className="mt-2 font-bold underline disabled:opacity-50"
+                      >
+                        Coba lagi
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1535,7 +2185,8 @@ export default function RacikResepAI() {
               <button
                 type="button"
                 onClick={ulangiRacik}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-green-700 to-emerald-600 px-7 py-3.5 font-extrabold text-white shadow-xl shadow-green-900/20 transition hover:-translate-y-0.5 active:scale-[0.98]"
+                disabled={persentaseMemasak === 100 && !nutrisiSudahDicatat}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-green-700 to-emerald-600 px-7 py-3.5 font-extrabold text-white shadow-xl shadow-green-900/20 transition hover:-translate-y-0.5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
               >
                 <RefreshCw size={17} />
                 Buat resep lain

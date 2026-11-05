@@ -57,8 +57,8 @@ const TARGET_RESEP = [
     icon: Users,
   },
   {
-    value: "bebas",
-    label: "Bebas",
+    value: "umum",
+    label: "Umum",
     description: "Resep keluarga sesuai bahan yang tersedia",
     icon: ChefHat,
   },
@@ -748,6 +748,7 @@ export default function RacikResepAI() {
         setPesanNutrisi(
           "Masakan selesai. Target Bebas tidak dimasukkan ke catatan Nutrisi."
         );
+        navigate("/");
         return;
       }
 
@@ -809,6 +810,7 @@ export default function RacikResepAI() {
         setPesanNutrisi(
           `1 porsi ${resepAI.nama_resep} tercatat pada Nutrisi ${anak.nama || "Si Kecil"}.`
         );
+        navigate("/");
         return;
       }
 
@@ -837,6 +839,7 @@ export default function RacikResepAI() {
             targetResep === "ibu_hamil" ? "Ibu Hamil" : "Ibu Menyusui"
           }.`
         );
+        navigate("/");
       }
     } catch (error) {
       console.error("Gagal mencatat nutrisi setelah memasak:", error);

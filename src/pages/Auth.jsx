@@ -100,6 +100,18 @@ function Auth() {
     useState(false);
 
   /* =======================================================
+     LUPA PASSWORD STATE
+  ======================================================= */
+
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+
+  /* =======================================================
      GANTI MODE
   ======================================================= */
 
@@ -174,32 +186,33 @@ function Auth() {
      REGISTER EMAIL + PASSWORD
   ======================================================= */
 
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
+const handleRegisterSubmit = async (e) => {
+  e.preventDefault();
 
-    if (
-      !registerForm.nama ||
-      !registerForm.email ||
-      !registerForm.password ||
-      !registerForm.konfirmasiPassword
-    ) {
-      alert("Mohon lengkapi semua data terlebih dahulu.");
-      return;
-    }
+  if (
+    !registerForm.nama ||
+    !registerForm.email ||
+    !registerForm.password ||
+    !registerForm.konfirmasiPassword
+  ) {
+    alert("Mohon lengkapi semua data terlebih dahulu.");
+    return;
+  }
 
-    if (registerForm.password.length < 8) {
-      alert("Kata sandi minimal 8 karakter.");
-      return;
-    }
+  if (registerForm.password.length < 8) {
+    alert("Kata sandi minimal 8 karakter.");
+    return;
+  }
 
-    if (
-      registerForm.password !==
-      registerForm.konfirmasiPassword
-    ) {
-      alert("Konfirmasi kata sandi tidak sama.");
-      return;
-    }
+  if (
+    registerForm.password !==
+    registerForm.konfirmasiPassword
+  ) {
+    alert("Konfirmasi kata sandi tidak sama.");
+    return;
+  }
 
+  try {
     const { data, error } = await supabase.auth.signUp({
       email: registerForm.email,
       password: registerForm.password,
@@ -208,6 +221,7 @@ function Auth() {
         data: {
           nama: registerForm.nama,
         },
+        emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     });
 
@@ -218,12 +232,148 @@ function Auth() {
     }
 
     if (data.user) {
-      alert(
-        "Pendaftaran berhasil. Silakan cek email untuk verifikasi akun."
-      );
+      // Jika sesi langsung tersedia
+      if (data.session) {
+        navigate("/dashboard");
+        return;
+      }
 
-      navigate("/login");
+      // Jika harus konfirmasi email
+      alert(
+        "Pendaftaran berhasil! Silakan cek Gmail kamu dan klik link konfirmasi. Setelah email dikonfirmasi, kamu akan langsung diarahkan ke Dashboard Dapur Cerdas tanpa perlu login kembali."
+      );
     }
+  } catch (error) {
+    console.error("Register Error:", error);
+    alert("Terjadi kesalahan saat mendaftar. Silakan coba lagi.");
+  }
+};
+
+  
+  /* =======================================================
+     LUPA PASSWORD - KIRIM OTP KE EMAIL
+  ======================================================= */
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+
+    const email = forgotEmail.trim().toLowerCase();
+
+    if (!email) {
+      alert("Masukkan email yang terdaftar terlebih dahulu.");
+      return;
+    }
+
+    setAuthLoading(true);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+
+    setAuthLoading(false);
+
+    if (error) {
+      console.error("Forgot Password Error:", error);
+      alert(error.message);
+      return;
+    }
+
+    // Supabase mengirim OTP apabila template Reset Password memakai {{ .Token }}.
+    setForgotEmail(email);
+    setOtp("");
+    setMode("verifyOtp");
+    alert(
+      "Jika email terdaftar, kode OTP akan dikirim. Silakan periksa kotak masuk atau folder spam Gmail."
+    );
+  };
+
+  /* =======================================================
+     LUPA PASSWORD - VERIFIKASI OTP
+  ======================================================= */
+
+  const handleVerifyOtpSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!forgotEmail || !/^\d{6}$/.test(otp.trim())) {
+      alert("Masukkan kode OTP 6 digit yang dikirim ke email.");
+      return;
+    }
+
+    setAuthLoading(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email: forgotEmail,
+      token: otp.trim(),
+      type: "recovery",
+    });
+
+    setAuthLoading(false);
+
+    if (error) {
+      console.error("Verify OTP Error:", error);
+      alert("Kode OTP tidak valid atau sudah kedaluwarsa. Silakan coba lagi.");
+      return;
+    }
+
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setMode("resetPassword");
+  };
+
+  /* =======================================================
+     LUPA PASSWORD - SIMPAN PASSWORD BARU
+  ======================================================= */
+
+  const handleUpdatePasswordSubmit = async (e) => {
+    e.preventDefault();
+
+    if (newPassword.length < 8) {
+      alert("Kata sandi baru minimal 8 karakter.");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      alert("Konfirmasi kata sandi baru tidak sama.");
+      return;
+    }
+
+    setAuthLoading(true);
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      setAuthLoading(false);
+      console.error("Update Password Error:", error);
+      alert(error.message);
+      return;
+    }
+
+    // Keluar setelah password berhasil diubah agar pengguna login kembali.
+    await supabase.auth.signOut();
+
+    setAuthLoading(false);
+    setLoginForm({
+      email: forgotEmail,
+      password: "",
+    });
+    setForgotEmail("");
+    setOtp("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setMode("login");
+    navigate("/login");
+
+    alert("Kata sandi berhasil diperbarui. Silakan masuk menggunakan kata sandi baru.");
+  };
+
+  const backToLogin = () => {
+    setMode("login");
+    setOtp("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    navigate("/login");
   };
 
   /* =======================================================
@@ -589,6 +739,10 @@ function Auth() {
 
                     <button
                       type="button"
+                      onClick={() => {
+                        setForgotEmail(loginForm.email);
+                        setMode("forgot");
+                      }}
                       className="
                         text-[12px]
                         font-semibold
@@ -758,7 +912,7 @@ function Auth() {
                         sm:text-sm
                       "
                     >
-                      Nama Lengkap Bunda
+                      Nama Lengkap
                     </label>
 
                     <div className="relative">
@@ -1166,6 +1320,195 @@ function Auth() {
                     </button>
                   </p>
                 </div>
+              </>
+            )}
+
+            {/* =================================================
+                FORGOT PASSWORD - EMAIL
+            ================================================= */}
+
+            {mode === "forgot" && (
+              <>
+                <div className="mb-6 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf4eb] text-[#23652d]">
+                    <Mail size={25} />
+                  </div>
+                  <h1 className="text-[24px] font-bold tracking-tight text-[#23652d] sm:text-[27px]">
+                    Lupa Kata Sandi?
+                  </h1>
+                  <p className="mx-auto mt-2 max-w-[390px] text-[13px] leading-relaxed text-[#7c8b7c] sm:text-sm">
+                    Masukkan email yang terdaftar. Kami akan mengirimkan kode OTP untuk mengatur ulang kata sandi.
+                  </p>
+                </div>
+
+                <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="forgot-email" className="mb-1.5 block text-[13px] font-semibold text-[#34414c] sm:text-sm">
+                      Email Aktif
+                    </label>
+                    <div className="relative">
+                      <Mail size={18} strokeWidth={1.8} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7c8b91]" />
+                      <input
+                        id="forgot-email"
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="nama@email.com"
+                        autoComplete="email"
+                        required
+                        className="h-[52px] w-full rounded-[14px] border border-transparent bg-[#eaf4eb] pl-11 pr-4 text-[14px] text-[#26313b] outline-none transition placeholder:text-[#89979d] focus:border-[#23652d] focus:bg-white focus:ring-2 focus:ring-[#23652d]/10"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    className="mt-2 flex h-[50px] w-full items-center justify-center rounded-[14px] bg-[#23652d] text-[14px] font-semibold text-white shadow-sm transition hover:bg-[#1d5626] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {authLoading ? "Mengirim kode..." : "Kirim Kode OTP"}
+                  </button>
+                </form>
+
+                <button type="button" onClick={backToLogin} className="mt-6 flex w-full items-center justify-center gap-2 text-[13px] font-semibold text-[#23652d] hover:underline">
+                  <ArrowLeft size={16} />
+                  Kembali ke halaman masuk
+                </button>
+              </>
+            )}
+
+            {/* =================================================
+                FORGOT PASSWORD - VERIFY OTP
+            ================================================= */}
+
+            {mode === "verifyOtp" && (
+              <>
+                <div className="mb-6 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf4eb] text-[#23652d]">
+                    <LockKeyhole size={25} />
+                  </div>
+                  <h1 className="text-[24px] font-bold tracking-tight text-[#23652d] sm:text-[27px]">
+                    Verifikasi OTP
+                  </h1>
+                  <p className="mx-auto mt-2 max-w-[390px] text-[13px] leading-relaxed text-[#7c8b7c] sm:text-sm">
+                    Masukkan kode 6 digit yang dikirim ke <strong>{forgotEmail}</strong>.
+                  </p>
+                </div>
+
+                <form onSubmit={handleVerifyOtpSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="recovery-otp" className="mb-1.5 block text-[13px] font-semibold text-[#34414c] sm:text-sm">
+                      Kode OTP
+                    </label>
+                    <input
+                      id="recovery-otp"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="Masukkan 6 digit kode"
+                      required
+                      className="h-[52px] w-full rounded-[14px] border border-transparent bg-[#eaf4eb] px-4 text-center text-[20px] font-semibold tracking-[0.35em] text-[#26313b] outline-none transition placeholder:text-[13px] placeholder:font-normal placeholder:tracking-normal placeholder:text-[#89979d] focus:border-[#23652d] focus:bg-white focus:ring-2 focus:ring-[#23652d]/10"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={authLoading || otp.length !== 6}
+                    className="mt-2 flex h-[50px] w-full items-center justify-center rounded-[14px] bg-[#23652d] text-[14px] font-semibold text-white shadow-sm transition hover:bg-[#1d5626] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {authLoading ? "Memverifikasi..." : "Verifikasi Kode"}
+                  </button>
+                </form>
+
+                <button type="button" onClick={() => setMode("forgot")} className="mt-4 w-full text-center text-[12px] font-semibold text-[#23652d] hover:underline">
+                  Kirim ulang OTP / Ganti email
+                </button>
+                <button type="button" onClick={backToLogin} className="mt-3 flex w-full items-center justify-center gap-2 text-[13px] font-semibold text-[#23652d] hover:underline">
+                  <ArrowLeft size={16} />
+                  Kembali ke halaman masuk
+                </button>
+              </>
+            )}
+
+            {/* =================================================
+                FORGOT PASSWORD - NEW PASSWORD
+            ================================================= */}
+
+            {mode === "resetPassword" && (
+              <>
+                <div className="mb-6 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf4eb] text-[#23652d]">
+                    <LockKeyhole size={25} />
+                  </div>
+                  <h1 className="text-[24px] font-bold tracking-tight text-[#23652d] sm:text-[27px]">
+                    Buat Kata Sandi Baru
+                  </h1>
+                  <p className="mx-auto mt-2 max-w-[390px] text-[13px] leading-relaxed text-[#7c8b7c] sm:text-sm">
+                    Buat kata sandi baru yang kuat dan mudah kamu ingat.
+                  </p>
+                </div>
+
+                <form onSubmit={handleUpdatePasswordSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="new-password" className="mb-1.5 block text-[13px] font-semibold text-[#34414c] sm:text-sm">
+                      Kata Sandi Baru
+                    </label>
+                    <div className="relative">
+                      <LockKeyhole size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7c8b91]" />
+                      <input
+                        id="new-password"
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Minimal 8 karakter"
+                        autoComplete="new-password"
+                        required
+                        className="h-[52px] w-full rounded-[14px] border border-transparent bg-[#eaf4eb] pl-11 pr-12 text-[14px] text-[#26313b] outline-none transition placeholder:text-[#89979d] focus:border-[#23652d] focus:bg-white focus:ring-2 focus:ring-[#23652d]/10"
+                      />
+                      <button type="button" onClick={() => setShowNewPassword((prev) => !prev)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7c8b91] hover:text-[#23652d]" aria-label={showNewPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}>
+                        {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="confirm-new-password" className="mb-1.5 block text-[13px] font-semibold text-[#34414c] sm:text-sm">
+                      Konfirmasi Kata Sandi Baru
+                    </label>
+                    <div className="relative">
+                      <LockKeyhole size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7c8b91]" />
+                      <input
+                        id="confirm-new-password"
+                        type={showConfirmNewPassword ? "text" : "password"}
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        placeholder="Ulangi kata sandi baru"
+                        autoComplete="new-password"
+                        required
+                        className="h-[52px] w-full rounded-[14px] border border-transparent bg-[#eaf4eb] pl-11 pr-12 text-[14px] text-[#26313b] outline-none transition placeholder:text-[#89979d] focus:border-[#23652d] focus:bg-white focus:ring-2 focus:ring-[#23652d]/10"
+                      />
+                      <button type="button" onClick={() => setShowConfirmNewPassword((prev) => !prev)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7c8b91] hover:text-[#23652d]" aria-label={showConfirmNewPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}>
+                        {showConfirmNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="flex items-center gap-1.5 text-[11px] text-[#8a948d]">
+                    <Check size={13} />
+                    Gunakan minimal 8 karakter
+                  </p>
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    className="mt-2 flex h-[50px] w-full items-center justify-center rounded-[14px] bg-[#23652d] text-[14px] font-semibold text-white shadow-sm transition hover:bg-[#1d5626] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {authLoading ? "Menyimpan..." : "Simpan Kata Sandi Baru"}
+                  </button>
+                </form>
               </>
             )}
           </div>

@@ -132,6 +132,36 @@ function usiaAnak(tanggal) {
   return `${bulan} bulan`;
 }
 
+function KartuAnalisisWHO({ hasil, loading, error, record }) {
+  if (loading) return <p className="mt-3 text-xs text-slate-500">Menghitung standar pertumbuhan WHO...</p>;
+  if (error) return <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Analisis WHO belum tersedia: {error}. Pastikan endpoint backend /api/pertumbuhan/analisis sudah dibuat.</p>;
+  if (!hasil) return <p className="mt-3 text-xs text-slate-500">Belum ada hasil analisis WHO.</p>;
+
+  const indikator = [
+    ["BB/U", hasil.bbu], ["PB/U atau TB/U", hasil.pbu_tbu],
+    ["BB/PB atau BB/TB", hasil.bb_pb_tb], ["LK/U", hasil.lku],
+  ];
+  return (
+    <div className="mt-3 rounded-2xl border border-[#dcebe0] bg-[#f7fbf7] p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-sm font-bold text-[#0f3d1e]">Analisis Pertumbuhan WHO</h4>
+        <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-slate-600">Usia {hasil.usia_hari ?? "—"} hari</span>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {indikator.map(([nama, item]) => item && (
+          <div key={nama} className="rounded-xl border border-[#e5eee7] bg-white p-3">
+            <p className="text-xs font-semibold text-slate-500">{nama}</p>
+            <p className="mt-1 text-sm font-bold text-[#193d24]">{item.kategori || "Belum dapat dinilai"}</p>
+            <p className="mt-1 text-xs text-slate-500">Z-score: {item.z_score == null ? "—" : `${Number(item.z_score).toFixed(2)} SD`}</p>
+          </div>
+        ))}
+      </div>
+      {hasil.kesimpulan && <p className="mt-3 text-sm leading-6 text-[#294b32]">{hasil.kesimpulan}</p>}
+      <p className="mt-2 text-[11px] leading-5 text-slate-500">Hasil merupakan skrining pertumbuhan berdasarkan standar WHO, bukan diagnosis. Konfirmasi dengan tenaga kesehatan.</p>
+    </div>
+  );
+}
+
 export default function SiKecil() {
   const navigate = useNavigate();
 
@@ -142,6 +172,7 @@ export default function SiKecil() {
   const [anak, setAnak] = useState([]);
   const [selectedAnakId, setSelectedAnakId] = useState("");
   const [pengukuran, setPengukuran] = useState([]);
+  const [hasilAnalisis, setHasilAnalisis] = useState({});
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -258,6 +289,50 @@ export default function SiKecil() {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  // Analisis dihitung oleh backend menggunakan tabel standar WHO resmi (LMS).
+  // Frontend tidak membuat perkiraan Z-score agar hasil tidak menyesatkan.
+  useEffect(() => {
+    let aktif = true;
+    async function muatAnalisis() {
+      if (!selectedChild || pengukuran.length === 0) {
+        setHasilAnalisis({});
+        return;
+      }
+      const tokenResult = await supabase.auth.getSession();
+      const token = tokenResult.data?.session?.access_token;
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+      const hasilBaru = {};
+      await Promise.all(pengukuran.map(async (record) => {
+        try {
+          const response = await fetch(`${apiUrl}/api/pertumbuhan/analisis`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              child_id: selectedChild.id,
+              jenis_kelamin: selectedChild.jenis_kelamin,
+              tanggal_lahir: selectedChild.tanggal_lahir,
+              tanggal_pengukuran: record.tanggal_pengukuran,
+              berat_kg: record.berat_kg,
+              panjang_tinggi_cm: record.panjang_tinggi_cm,
+              lingkar_kepala_cm: record.lingkar_kepala_cm,
+              posisi_pengukuran: hitungHari(selectedChild.tanggal_lahir, record.tanggal_pengukuran) < 730 ? "berbaring" : "berdiri",
+            }),
+          });
+          if (!response.ok) throw new Error(response.status === 404 ? "Endpoint analisis WHO belum tersedia di backend." : `Server merespons ${response.status}.`);
+          hasilBaru[record.id] = { data: await response.json(), error: "", loading: false };
+        } catch (err) {
+          hasilBaru[record.id] = { data: null, error: err.message || "Gagal menghitung.", loading: false };
+        }
+      }));
+      if (aktif) setHasilAnalisis(hasilBaru);
+    }
+    muatAnalisis();
+    return () => { aktif = false; };
+  }, [selectedChild, pengukuran]);
 
   async function simpanIbu(e) {
     e.preventDefault();
@@ -914,6 +989,22 @@ export default function SiKecil() {
                           ))}
                         </tbody>
                       </table>
+                      <div className="mt-4 space-y-3">
+                        {pengukuran.map((r) => (
+                          <div key={`analisis-${r.id}`} className="rounded-2xl border border-[#e8efe9] bg-white p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-xs font-bold text-[#294b32]">Analisis pengukuran · {formatTanggal(r.tanggal_pengukuran)}</p>
+                              <span className="text-[11px] text-slate-500">{selectedChild.nama}</span>
+                            </div>
+                            <KartuAnalisisWHO
+                              hasil={hasilAnalisis[r.id]?.data}
+                              error={hasilAnalisis[r.id]?.error}
+                              loading={!hasilAnalisis[r.id]}
+                              record={r}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

@@ -286,7 +286,8 @@ function Notifikasi() {
               satuan,
               tanggal_masuk,
               tanggal_kadaluarsa,
-              created_at
+              created_at,
+              status
             `
           )
           .eq("user_id", user.id)
@@ -396,29 +397,33 @@ function Notifikasi() {
               stok.tanggal_kadaluarsa
             );
 
+          const sudahKedaluwarsa =
+            stok.status === "kedaluwarsa" ||
+            (selisihHari !== null && selisihHari < 0);
+
           if (
-            selisihHari !== null &&
-            selisihHari <= 3
+            sudahKedaluwarsa ||
+            (selisihHari !== null && selisihHari >= 0 && selisihHari <= 3)
           ) {
             aktivitas.push({
+              // ID stabil berdasarkan baris stok, sehingga satu baris
+              // hanya menghasilkan satu notifikasi pada halaman.
               id: `exp-${stok.id}`,
               tipe: "kedaluwarsa",
-              judul:
-                selisihHari < 0
-                  ? "Bahan Sudah Kedaluwarsa"
-                  : "Pengingat Kedaluwarsa",
+              judul: sudahKedaluwarsa
+                ? "Bahan Dikeluarkan dari Stok Aktif"
+                : "Pengingat Kedaluwarsa",
               nama,
-              pesan: getPesanKedaluwarsa(
-                stok.tanggal_kadaluarsa
-              ),
+              pesan: sudahKedaluwarsa
+                ? `${nama} (${jumlah}) sudah kedaluwarsa pada ${stok.tanggal_kadaluarsa} dan dipindahkan ke Riwayat Bahan.`
+                : getPesanKedaluwarsa(stok.tanggal_kadaluarsa),
               jumlah,
               image,
               waktu: stok.tanggal_kadaluarsa,
               timestamp: new Date(
                 `${stok.tanggal_kadaluarsa}T00:00:00`
               ).getTime(),
-              tanggalKadaluarsa:
-                stok.tanggal_kadaluarsa,
+              tanggalKadaluarsa: stok.tanggal_kadaluarsa,
             });
           }
 
@@ -426,7 +431,7 @@ function Notifikasi() {
              3. PENGINGAT STOK LAMA
           ============================================= */
 
-          if (stok.tanggal_masuk) {
+          if (!sudahKedaluwarsa && stok.tanggal_masuk) {
             const tanggalMasuk = new Date(
               `${stok.tanggal_masuk}T00:00:00`
             );
@@ -797,6 +802,12 @@ function NotificationCard({
           {item.jumlah && (
             <p className="mt-1 text-[10px] font-medium text-slate-400 sm:text-[11px]">
               Jumlah: {item.jumlah}
+            </p>
+          )}
+
+          {item.tanggalKadaluarsa && (
+            <p className="mt-0.5 text-[10px] font-medium text-slate-400 sm:text-[11px]">
+              Tanggal kedaluwarsa: {item.tanggalKadaluarsa}
             </p>
           )}
 

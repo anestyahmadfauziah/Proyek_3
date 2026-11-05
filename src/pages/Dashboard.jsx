@@ -20,6 +20,8 @@ import {
   Clock,
   ArrowRight,
   Bookmark,
+  Utensils,
+  X,
 } from "lucide-react";
 
 import logoDapurCerdas from "../assets/logo-dapur-cerdas.png";
@@ -171,6 +173,266 @@ function getStatusLabel(item) {
 }
 
 /* =========================================================
+   PEDOMAN MENU MAKANAN (DATA STATIS)
+========================================================= */
+
+const pedomanMenu = [
+  {
+    id: "hamil",
+    judul: "Ibu Hamil",
+    deskripsi: "Pilihan menu bergizi selama masa kehamilan.",
+    label: "Gizi selama kehamilan",
+    warna: "from-rose-50 to-orange-50",
+    aksen: "bg-rose-100 text-rose-700",
+    gambar:
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=85",
+    pengantar:
+      "Pilih makanan yang beragam dengan sumber karbohidrat, protein, sayur, dan buah. Kebutuhan setiap ibu dapat berbeda sesuai kondisi kehamilan.",
+    menu: [
+      {
+        waktu: "Sarapan",
+        nama: "Nasi, telur matang, dan tumis bayam",
+        bahan: "Nasi, telur, bayam, bawang putih, dan sedikit minyak.",
+        manfaat: "Memberikan energi, protein, serta zat besi dan folat dari bahan pangan.",
+      },
+      {
+        waktu: "Makan siang",
+        nama: "Nasi, ikan matang, sayur bening, dan jeruk",
+        bahan: "Nasi, ikan, bayam atau oyong, wortel, dan jeruk.",
+        manfaat: "Kombinasi karbohidrat, protein, sayuran, dan buah sumber vitamin C.",
+      },
+      {
+        waktu: "Makan malam",
+        nama: "Sup ayam, tahu, dan nasi",
+        bahan: "Ayam matang, tahu, wortel, kentang, buncis, dan nasi.",
+        manfaat: "Menyediakan protein dan variasi sayuran dalam satu hidangan.",
+      },
+    ],
+    tips: [
+      "Konsumsi makanan beragam dan makan dalam porsi yang nyaman.",
+      "Pastikan daging, ikan, telur, dan makanan laut dimasak hingga matang.",
+      "Cuci sayur dan buah dengan air bersih sebelum dikonsumsi.",
+      "Hindari alkohol serta batasi kafein sesuai anjuran tenaga kesehatan.",
+    ],
+  },
+  {
+    id: "menyusui",
+    judul: "Ibu Menyusui",
+    deskripsi: "Inspirasi makanan bergizi untuk mendukung kebutuhan ibu.",
+    label: "Gizi ibu menyusui",
+    warna: "from-violet-50 to-fuchsia-50",
+    aksen: "bg-violet-100 text-violet-700",
+    gambar:
+      "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=85",
+    pengantar:
+      "Ibu menyusui dianjurkan mengonsumsi makanan beragam dan seimbang, cukup minum, serta menyesuaikan porsi dengan rasa lapar dan kebutuhan tubuh.",
+    menu: [
+      {
+        waktu: "Sarapan",
+        nama: "Nasi, omelet sayur matang, dan pepaya",
+        bahan: "Nasi, telur, wortel, bayam, dan pepaya.",
+        manfaat: "Memberikan energi, protein, serat, serta vitamin dari buah dan sayur.",
+      },
+      {
+        waktu: "Makan siang",
+        nama: "Nasi, ikan, tempe, dan sayur bening",
+        bahan: "Nasi, ikan matang, tempe, bayam, dan jagung.",
+        manfaat: "Mengombinasikan sumber protein hewani dan nabati dengan sayuran.",
+      },
+      {
+        waktu: "Makan malam",
+        nama: "Sup ayam kentang dan tumis buncis",
+        bahan: "Ayam matang, kentang, wortel, buncis, dan nasi.",
+        manfaat: "Pilihan menu dengan protein, karbohidrat, dan sayuran.",
+      },
+    ],
+    tips: [
+      "Makan secara teratur dengan menu yang bervariasi.",
+      "Sediakan air minum dan minum sesuai rasa haus.",
+      "Tidak perlu menghindari banyak jenis makanan tanpa alasan medis.",
+      "Konsultasikan kebutuhan suplemen atau pantangan khusus dengan tenaga kesehatan.",
+    ],
+  },
+  {
+    id: "balita",
+    judul: "Balita",
+    deskripsi: "Contoh menu sesuai tahapan usia dan tekstur makanan.",
+    label: "MPASI dan menu balita",
+    warna: "from-amber-50 to-yellow-50",
+    aksen: "bg-amber-100 text-amber-700",
+    gambar:
+      "https://images.unsplash.com/photo-1563114773-84221bd62daa?auto=format&fit=crop&w=900&q=85",
+    pengantar:
+      "Menu balita perlu disesuaikan dengan usia, kemampuan makan, dan tahap perkembangan. Untuk anak di bawah 2 tahun, lanjutkan ASI sesuai anjuran.",
+    menu: [
+      {
+        waktu: "Usia 6–8 bulan",
+        nama: "Bubur kental nasi, ayam, dan wortel",
+        bahan: "Nasi, ayam matang tanpa tulang, wortel, dan sedikit minyak.",
+        manfaat: "Tekstur lumat/kental dengan sumber protein hewani dan sayuran. Mulai dari porsi kecil dan tingkatkan bertahap.",
+      },
+      {
+        waktu: "Usia 9–11 bulan",
+        nama: "Nasi tim lembek, ikan, tahu, dan sayur",
+        bahan: "Nasi tim, ikan matang tanpa duri, tahu, labu, dan bayam.",
+        manfaat: "Tekstur cincang atau makanan lunak yang dapat dipegang sesuai kemampuan anak.",
+      },
+      {
+        waktu: "Usia 12–23 bulan",
+        nama: "Nasi, ayam suwir, tumis sayur, dan buah",
+        bahan: "Nasi, ayam suwir lembut, wortel, buncis, dan pisang.",
+        manfaat: "Makanan keluarga dengan tekstur yang disesuaikan dan potongan aman untuk anak.",
+      },
+    ],
+    tips: [
+      "Berikan MPASI mulai usia 6 bulan sambil meneruskan ASI.",
+      "Sesuaikan tekstur dan ukuran potongan dengan kemampuan anak.",
+      "Hindari makanan yang berisiko menyebabkan tersedak, seperti kacang utuh dan potongan keras.",
+      "Hindari madu sebelum usia 12 bulan dan jangan menambahkan gula atau garam berlebihan.",
+      "Dampingi anak selama makan dan terapkan jadwal makan yang teratur.",
+    ],
+  },
+];
+
+/* =========================================================
+   MENU HARIAN 7 HARI (DATA STATIS, BERGANTI OTOMATIS)
+========================================================= */
+
+const namaHari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+const menuHarian = {
+  hamil: [
+    [
+      ["Sarapan", "Nasi, telur matang, dan tumis bayam", "Nasi, telur matang, bayam, dan sedikit minyak.", "Sumber energi, protein, serta folat dan zat besi dari bahan pangan."],
+      ["Makan siang", "Nasi, ikan matang, sayur bening, dan jeruk", "Nasi, ikan matang, bayam, wortel, dan jeruk.", "Protein, sayuran, dan buah sumber vitamin C."],
+      ["Makan malam", "Sup ayam, tahu, dan nasi", "Ayam matang, tahu, wortel, kentang, buncis, dan nasi.", "Kombinasi protein, karbohidrat, dan sayuran."],
+    ],
+    [
+      ["Sarapan", "Roti gandum, telur matang, dan pisang", "Roti gandum, telur matang, dan pisang.", "Karbohidrat, protein, dan serat."],
+      ["Makan siang", "Nasi, ayam panggang matang, dan capcay", "Nasi, ayam matang, wortel, brokoli, dan kembang kol.", "Protein dan variasi sayuran."],
+      ["Makan malam", "Sup ikan, tahu, dan kentang", "Ikan matang tanpa duri, tahu, kentang, dan sayuran.", "Protein dan sumber energi."],
+    ],
+    [
+      ["Sarapan", "Bubur kacang hijau dan telur matang", "Kacang hijau matang, santan secukupnya, dan telur matang.", "Energi, protein nabati, dan protein hewani."],
+      ["Makan siang", "Nasi, daging sapi matang, dan sayur bening", "Nasi, daging sapi matang, bayam, dan jagung.", "Daging sapi merupakan sumber zat besi dan protein."],
+      ["Makan malam", "Nasi, tempe, dan tumis buncis wortel", "Nasi, tempe matang, buncis, dan wortel.", "Protein nabati dan serat."],
+    ],
+    [
+      ["Sarapan", "Oat, susu pasteurisasi, dan pepaya", "Oat matang, susu pasteurisasi, dan pepaya.", "Serat, protein, kalsium, dan vitamin."],
+      ["Makan siang", "Nasi, ikan kembung matang, dan sayur", "Nasi, ikan kembung matang, labu siam, dan wortel.", "Protein dan lemak sehat dari ikan."],
+      ["Makan malam", "Sup ayam, tahu, dan nasi", "Ayam matang, tahu, kentang, wortel, dan nasi.", "Protein dan karbohidrat."],
+    ],
+    [
+      ["Sarapan", "Nasi, omelet sayur matang, dan alpukat", "Nasi, telur matang, wortel, bayam, dan alpukat.", "Energi, protein, dan lemak tak jenuh."],
+      ["Makan siang", "Nasi, ikan matang, tempe, dan sayur", "Nasi, ikan matang, tempe, dan sayur bening.", "Protein hewani dan nabati."],
+      ["Makan malam", "Kentang, ayam kukus matang, dan brokoli", "Kentang, ayam matang, dan brokoli.", "Karbohidrat, protein, dan serat."],
+    ],
+    [
+      ["Sarapan", "Bubur ayam rumahan dan buah", "Bubur nasi, ayam matang, wortel, dan pir.", "Menu hangat dengan protein dan buah."],
+      ["Makan siang", "Nasi, telur balado matang, dan sayur", "Nasi, telur matang, bumbu tanpa berlebihan, dan sayuran.", "Protein dan variasi sayuran."],
+      ["Makan malam", "Sup tahu ikan dan nasi", "Ikan matang tanpa duri, tahu, sawi, dan nasi.", "Protein dan cairan dari sup."],
+    ],
+    [
+      ["Sarapan", "Ubi kukus, telur matang, dan susu pasteurisasi", "Ubi, telur matang, dan susu pasteurisasi.", "Energi, protein, dan kalsium."],
+      ["Makan siang", "Nasi, ayam semur matang, dan tumis sayur", "Nasi, ayam matang, wortel, dan buncis.", "Protein dan sayuran."],
+      ["Makan malam", "Nasi, pepes ikan matang, dan sayur bening", "Nasi, ikan matang, bayam, dan jagung.", "Protein dan zat gizi dari sayuran."],
+    ],
+  ],
+  menyusui: [
+    [
+      ["Sarapan", "Nasi, omelet sayur, dan pepaya", "Nasi, telur, wortel, bayam, dan pepaya.", "Energi, protein, serat, dan vitamin."],
+      ["Makan siang", "Nasi, ikan, tempe, dan sayur bening", "Nasi, ikan matang, tempe, bayam, dan jagung.", "Protein hewani dan nabati."],
+      ["Makan malam", "Sup ayam kentang dan tumis buncis", "Ayam matang, kentang, wortel, buncis, dan nasi.", "Protein, karbohidrat, dan sayuran."],
+    ],
+    [
+      ["Sarapan", "Roti gandum, telur, dan susu", "Roti gandum, telur matang, dan susu.", "Energi, protein, dan kalsium."],
+      ["Makan siang", "Nasi, ikan kembung, dan tumis kangkung", "Nasi, ikan matang, kangkung, dan tahu.", "Protein dan variasi sayuran."],
+      ["Makan malam", "Sup daging, wortel, dan kentang", "Daging matang, wortel, kentang, dan nasi.", "Protein dan sumber energi."],
+    ],
+    [
+      ["Sarapan", "Bubur kacang hijau dan pisang", "Kacang hijau matang dan pisang.", "Energi, serat, dan protein nabati."],
+      ["Makan siang", "Nasi, ayam panggang, dan capcay", "Nasi, ayam matang, brokoli, wortel, dan kembang kol.", "Protein dan serat."],
+      ["Makan malam", "Pepes tahu ikan dan nasi", "Tahu, ikan matang tanpa duri, dan nasi.", "Protein hewani dan nabati."],
+    ],
+    [
+      ["Sarapan", "Oat susu dan potongan mangga", "Oat matang, susu, dan mangga.", "Serat, kalsium, dan vitamin."],
+      ["Makan siang", "Nasi, telur balado matang, dan sayur asem", "Nasi, telur matang, labu, kacang panjang, dan jagung.", "Energi, protein, dan sayuran."],
+      ["Makan malam", "Sup ikan tahu dan nasi", "Ikan matang, tahu, wortel, dan nasi.", "Protein dan cairan."],
+    ],
+    [
+      ["Sarapan", "Ubi kukus, telur, dan alpukat", "Ubi, telur matang, dan alpukat.", "Energi, protein, dan lemak tak jenuh."],
+      ["Makan siang", "Nasi, ayam kecap, dan tumis buncis", "Nasi, ayam matang, buncis, dan wortel.", "Protein dan sayuran."],
+      ["Makan malam", "Nasi, tempe, dan sayur bayam", "Nasi, tempe matang, bayam, dan jagung.", "Protein nabati dan serat."],
+    ],
+    [
+      ["Sarapan", "Nasi goreng sayur dan telur matang", "Nasi, telur matang, wortel, dan sawi.", "Energi dan protein."],
+      ["Makan siang", "Ikan kuah kuning, nasi, dan lalap matang", "Ikan matang, nasi, dan sayuran matang.", "Protein dan variasi sayuran."],
+      ["Makan malam", "Sup ayam makaroni dan sayur", "Ayam matang, makaroni, wortel, dan buncis.", "Karbohidrat, protein, dan serat."],
+    ],
+    [
+      ["Sarapan", "Pancake pisang dan susu", "Pisang, telur matang, tepung, dan susu.", "Energi, protein, dan kalsium."],
+      ["Makan siang", "Nasi, pepes tahu, dan sayur bening", "Nasi, tahu, bayam, dan wortel.", "Protein nabati dan sayuran."],
+      ["Makan malam", "Nasi, ikan panggang matang, dan tumis brokoli", "Nasi, ikan matang, dan brokoli.", "Protein dan serat."],
+    ],
+  ],
+  balita: [
+    [
+      ["Sarapan", "Bubur nasi kental ayam dan wortel", "Nasi, ayam matang tanpa tulang, wortel, dan sedikit minyak.", "Sajikan lumat atau cincang sesuai usia dan kemampuan makan."],
+      ["Makan siang", "Nasi tim ikan, tahu, dan bayam", "Nasi tim, ikan matang tanpa duri, tahu, dan bayam.", "Protein hewani dan nabati; sesuaikan tekstur."],
+      ["Makan malam", "Nasi lembek, telur matang, dan sup labu", "Nasi, telur matang, labu, dan wortel.", "Menu beragam dengan tekstur aman untuk anak."],
+    ],
+    [
+      ["Sarapan", "Bubur oat pisang dan telur matang", "Oat matang, pisang, dan telur matang.", "Energi dan protein; sesuaikan kekentalan."],
+      ["Makan siang", "Nasi, ayam cincang, dan brokoli", "Nasi, ayam matang cincang, brokoli, dan wortel.", "Protein dan sayuran dengan potongan sesuai kemampuan."],
+      ["Makan malam", "Sup kentang tahu dan ikan", "Kentang, tahu, ikan matang tanpa duri, dan sayuran.", "Sumber energi dan protein."],
+    ],
+    [
+      ["Sarapan", "Nasi lembek, telur orak-arik matang, dan pepaya", "Nasi, telur matang, dan pepaya matang.", "Protein dan buah; potong buah sesuai usia."],
+      ["Makan siang", "Bubur nasi daging dan wortel", "Nasi, daging matang cincang, dan wortel.", "Protein hewani dan zat besi."],
+      ["Makan malam", "Nasi tim tempe dan sayur", "Nasi tim, tempe matang, labu, dan bayam.", "Protein nabati dan sayuran."],
+    ],
+    [
+      ["Sarapan", "Bubur kentang ayam dan bayam", "Kentang, ayam matang, dan bayam.", "Energi, protein, dan sayuran."],
+      ["Makan siang", "Nasi, ikan matang, dan sup wortel", "Nasi, ikan tanpa duri, wortel, dan tahu.", "Protein dan vitamin dari sayuran."],
+      ["Makan malam", "Nasi lembek, telur matang, dan tumis labu", "Nasi, telur matang, dan labu yang dimasak lunak.", "Protein dan energi."],
+    ],
+    [
+      ["Sarapan", "Bubur kacang hijau dan pisang", "Kacang hijau matang lembut dan pisang.", "Energi dan protein nabati."],
+      ["Makan siang", "Nasi, ayam suwir lembut, dan buncis", "Nasi, ayam matang suwir halus, dan buncis lunak.", "Protein dan serat."],
+      ["Makan malam", "Sup tahu ikan dan nasi", "Tahu, ikan matang tanpa duri, sayuran, dan nasi.", "Protein hewani dan nabati."],
+    ],
+    [
+      ["Sarapan", "Roti lembut, telur matang, dan alpukat", "Roti lembut, telur matang, dan alpukat.", "Energi, protein, dan lemak sehat."],
+      ["Makan siang", "Nasi tim ayam dan labu kuning", "Nasi, ayam matang, dan labu kuning.", "Protein dan sumber energi."],
+      ["Makan malam", "Nasi, tahu, dan sup sayuran", "Nasi, tahu, wortel, kentang, dan bayam.", "Protein nabati dan sayuran."],
+    ],
+    [
+      ["Sarapan", "Bubur nasi ikan dan wortel", "Nasi, ikan matang tanpa duri, dan wortel.", "Protein hewani dan sayuran."],
+      ["Makan siang", "Nasi, telur matang, dan sup ayam", "Nasi, telur matang, ayam, dan sayuran.", "Protein dan energi."],
+      ["Makan malam", "Nasi lembek, tempe, dan sayur bening", "Nasi, tempe matang, bayam, dan jagung.", "Protein nabati dan serat."],
+    ],
+  ],
+};
+
+function getTanggalMenuHariIni() {
+  const tanggal = new Date();
+  return `${namaHari[tanggal.getDay()]}, ${tanggal.getDate()} ${namaBulan[tanggal.getMonth()]} ${tanggal.getFullYear()}`;
+}
+
+function getMenuHariIni(id) {
+  const indeksHari = new Date().getDay(); // 0 Minggu sampai 6 Sabtu
+  const daftarMenu = (menuHarian[id] || [])[indeksHari] || [];
+
+  return daftarMenu.map(([waktu, nama, bahan, manfaat]) => ({
+    waktu,
+    nama,
+    bahan,
+    manfaat,
+  }));
+}
+
+/* =========================================================
    DASHBOARD
 ========================================================= */
 
@@ -195,6 +457,9 @@ function Dashboard() {
   const [resepTersimpan, setResepTersimpan] = useState([]);
   const [loadingResep, setLoadingResep] = useState(true);
   const [errorResep, setErrorResep] = useState("");
+
+  // Detail pedoman menu statis yang sedang dibuka
+  const [pedomanTerpilih, setPedomanTerpilih] = useState(null);
 
   /* =======================================================
      SESSION SUPABASE
@@ -274,7 +539,8 @@ function Dashboard() {
             jumlah,
             satuan,
             tanggal_masuk,
-            tanggal_kadaluarsa
+            tanggal_kadaluarsa,
+            status
           `)
           .eq("user_id", user.id)
           .order("tanggal_kadaluarsa", {
@@ -307,7 +573,18 @@ function Dashboard() {
           ingredientsData = data || [];
         }
 
-        const hasil = stokData.map((stok) => {
+        // Hanya tampilkan stok aktif. Tanggal juga diperiksa sebagai
+        // pengaman jika proses Cron belum berjalan pada hari ini.
+        const stokAktif = stokData.filter((stok) => {
+          const selisihHari = hitungSelisihHari(stok.tanggal_kadaluarsa);
+          const sudahKedaluwarsa =
+            stok.status === "kedaluwarsa" ||
+            (selisihHari !== null && selisihHari < 0);
+
+          return !sudahKedaluwarsa;
+        });
+
+        const hasil = stokAktif.map((stok) => {
           const bahanMaster = ingredientsData.find(
             (item) => item.id === stok.bahan_pangan_id
           );
@@ -446,19 +723,14 @@ function Dashboard() {
     (item) => item.status === "Perlu diolah"
   ).length;
 
-  const jumlahKedaluwarsa = bahan.filter(
-    (item) => item.status === "Kedaluwarsa"
-  ).length;
+  // Bahan kedaluwarsa sudah dikeluarkan dari data Dashboard.
+  const jumlahKedaluwarsa = 0;
 
   const bahanPrioritas = bahan
-    .filter(
-      (item) => item.status === "Perlu diolah" || item.status === "Kedaluwarsa"
-    )
+    .filter((item) => item.status === "Perlu diolah")
     .slice(0, 3);
 
-  // Bahan kedaluwarsa tidak ditampilkan di ringkasan kulkas,
-  // cukup muncul di kartu "Kondisi Stok Saat Ini".
-  const bahanRingkasan = bahan.filter((item) => item.status !== "Kedaluwarsa");
+  const bahanRingkasan = bahan;
 
   /* =======================================================
      NAMA USER
@@ -711,12 +983,7 @@ function Dashboard() {
                   Kondisi Stok Saat Ini
                 </h3>
 
-                {jumlahKedaluwarsa > 0 ? (
-                  <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-500">
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                    {jumlahKedaluwarsa} bahan sudah kedaluwarsa
-                  </p>
-                ) : jumlahPerluDiolah > 0 ? (
+                {jumlahPerluDiolah > 0 ? (
                   <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-bold text-orange-500">
                     <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
                     {jumlahPerluDiolah} bahan perlu diolah segera
@@ -756,7 +1023,7 @@ function Dashboard() {
                   Semua bahan dalam kondisi baik.
                 </p>
                 <p className="mt-1 text-[11px] text-slate-400">
-                  Tidak ada bahan yang perlu diolah segera.
+                  Tidak ada bahan yang mendekati kedaluwarsa.
                 </p>
               </div>
             ) : (
@@ -856,6 +1123,162 @@ function Dashboard() {
             ♨
           </div>
         </section>
+
+        {/* ===================================================
+            PEDOMAN MENU MAKANAN
+        =================================================== */}
+
+        <section className="mt-6 overflow-hidden rounded-3xl border border-[#f1e2cf] bg-gradient-to-br from-[#fffaf1] via-[#fff6e9] to-[#fff1df] p-4 shadow-[0_8px_28px_rgba(160,105,45,0.08)] sm:mt-7 sm:p-6">
+          <div className="mb-4 flex items-start gap-3 sm:mb-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#23652d] to-[#39964b] text-white shadow-md">
+              <Utensils size={19} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-extrabold tracking-tight text-[#202833] sm:text-lg">
+                Menu Makanan Hari Ini
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-sm">
+                {getTanggalMenuHariIni()} · Menu berganti otomatis setiap hari.
+              </p>
+            </div>
+            <span className="hidden rounded-full bg-white/80 px-3 py-1 text-[10px] font-bold text-[#9a6a27] sm:inline-flex">
+              Menu Harian
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
+            {pedomanMenu.map((pedoman) => (
+              <article
+                key={pedoman.id}
+                className="group overflow-hidden rounded-2xl border border-white/90 bg-white/90 shadow-[0_4px_14px_rgba(32,40,51,0.06)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(32,40,51,0.1)]"
+              >
+                <div className="relative h-40 overflow-hidden sm:h-36 lg:h-40">
+                  <img
+                    src={pedoman.gambar}
+                    alt={`Inspirasi menu ${pedoman.judul}`}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = "https://placehold.co/600x400?text=Menu+Sehat";
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+                  <span className={`absolute bottom-3 left-3 rounded-full px-3 py-1 text-[11px] font-extrabold ${pedoman.aksen}`}>
+                    {pedoman.judul}
+                  </span>
+                </div>
+                <div className="p-3.5 sm:p-4">
+                  <p className="min-h-[36px] text-xs leading-relaxed text-slate-600 sm:text-sm">
+                    {pedoman.deskripsi}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPedomanTerpilih({ ...pedoman, menuHariIni: getMenuHariIni(pedoman.id) })}
+                    className="group/link mt-3 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#23652d] transition hover:text-[#174b22]"
+                  >
+                    Lihat Menu Hari Ini
+                    <ArrowRight size={14} className="transition group-hover/link:translate-x-1" />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+          <p className="mt-4 text-[10px] leading-relaxed text-slate-500 sm:text-[11px]">
+            Catatan: Menu berganti otomatis setiap hari mengikuti tanggal perangkat dan berulang dalam siklus 7 hari. Sesuaikan porsi, tekstur, alergi, serta kondisi kesehatan dengan anjuran tenaga kesehatan.
+          </p>
+        </section>
+
+        {/* MODAL DETAIL PEDOMAN MENU */}
+        {pedomanTerpilih && (
+          <div
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setPedomanTerpilih(null);
+            }}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="judul-pedoman-menu"
+              className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-[#fbfdfb] shadow-2xl sm:rounded-3xl"
+            >
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-green-100 bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#39834a]">{pedomanTerpilih.label} · {namaHari[new Date().getDay()]}</p>
+                  <h3 id="judul-pedoman-menu" className="mt-0.5 text-base font-extrabold text-[#202833] sm:text-lg">
+                    Pedoman {pedomanTerpilih.judul}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPedomanTerpilih(null)}
+                  aria-label="Tutup panduan"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-4 sm:p-6">
+                <img
+                  src={pedomanTerpilih.gambar}
+                  alt={`Menu ${pedomanTerpilih.judul}`}
+                  className="h-40 w-full rounded-2xl object-cover sm:h-52"
+                />
+                <p className="mt-4 text-xs leading-relaxed text-slate-600 sm:text-sm">
+                  {pedomanTerpilih.pengantar}
+                </p>
+
+                <div className="mt-5">
+                  <h4 className="text-sm font-extrabold text-[#202833]">Menu {getTanggalMenuHariIni()}</h4>
+                  <div className="mt-3 space-y-3">
+                    {pedomanTerpilih.menuHariIni.map((item, index) => (
+                      <article key={`${pedomanTerpilih.id}-${item.waktu}`} className="rounded-2xl border border-green-100 bg-white p-3.5 sm:p-4">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-100 text-[11px] font-extrabold text-[#23652d]">{index + 1}</span>
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-[#39834a]">{item.waktu}</p>
+                            <h5 className="text-xs font-extrabold text-[#202833] sm:text-sm">{item.nama}</h5>
+                          </div>
+                        </div>
+                        <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                          <div className="rounded-xl bg-[#f5faf5] p-3">
+                            <p className="font-bold text-[#23652d]">Bahan</p>
+                            <p className="mt-1 leading-relaxed text-slate-600">{item.bahan}</p>
+                          </div>
+                          <div className="rounded-xl bg-[#fff9ed] p-3">
+                            <p className="font-bold text-[#9a6a27]">Keterangan gizi</p>
+                            <p className="mt-1 leading-relaxed text-slate-600">{item.manfaat}</p>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <h4 className="text-sm font-extrabold text-[#80551d]">Tips Penting</h4>
+                  <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs leading-relaxed text-[#765e43]">
+                    {pedomanTerpilih.tips.map((tip) => (
+                      <li key={tip}>{tip}</li>
+                    ))}
+                  </ul>
+                </div>
+                <p className="mt-4 text-[10px] leading-relaxed text-slate-500">
+                  Menu ini merupakan referensi edukasi umum dalam siklus 7 hari, bukan pengganti konsultasi dokter, bidan, atau ahli gizi. Untuk alergi, penyakit tertentu, kehamilan berisiko, atau masalah pertumbuhan anak, konsultasikan menu dengan tenaga kesehatan.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setPedomanTerpilih(null)}
+                  className="mt-5 w-full rounded-xl bg-gradient-to-r from-[#1f6b2b] to-[#2f9e4f] px-4 py-3 text-xs font-extrabold text-white shadow-md transition hover:-translate-y-0.5 active:scale-[0.99]"
+                >
+                  Tutup Panduan
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
 
         {/* ===================================================
             RESEP TERSIMPAN
@@ -1052,8 +1475,7 @@ function Dashboard() {
             </p>
           ) : bahanRingkasan.length === 0 ? (
             <p className="text-xs text-slate-400">
-              Tidak ada bahan yang masih segar. Hapus bahan kedaluwarsa di
-              halaman Stok.
+              Belum ada bahan aktif di stok kulkas.
             </p>
           ) : (
             <div className="relative">

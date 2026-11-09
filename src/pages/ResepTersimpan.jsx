@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
-  Bookmark,
   ChefHat,
   Clock,
   Trash2,
@@ -13,6 +12,7 @@ import {
   ChevronUp,
   Utensils,
   Flame,
+  BookOpen
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 
@@ -151,7 +151,7 @@ export default function ResepTersimpan() {
           </button>
 
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-800">
-            <Bookmark size={21} />
+            <BookOpen size={21} />
           </div>
 
           <div>
@@ -215,7 +215,7 @@ export default function ResepTersimpan() {
         ) : items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-green-200 bg-white px-5 py-12 text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50 text-green-700">
-              <Bookmark size={30} />
+              <BookOpen size={30} />
             </div>
             <h3 className="mt-4 font-bold text-green-950">
               Belum ada resep tersimpan

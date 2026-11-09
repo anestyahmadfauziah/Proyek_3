@@ -19,7 +19,8 @@ import {
   X,
   Lightbulb,
   Heart,
-  Bookmark,
+  BookOpen,
+  CookingPot,
 } from "lucide-react";
 
 import { supabase } from "../lib/supabaseClient";
@@ -743,14 +744,14 @@ export default function RacikResepAI() {
 
     try {
       // Target Bebas selesai memasak tanpa membuat catatan nutrisi.
-      if (targetResep === "bebas") {
-        setNutrisiSudahDicatat(true);
-        setPesanNutrisi(
-          "Masakan selesai. Target Bebas tidak dimasukkan ke catatan Nutrisi."
-        );
-        navigate("/");
-        return;
-      }
+      if (targetResep === "umum") {
+  setNutrisiSudahDicatat(true);
+  setPesanNutrisi(
+    "Masakan berhasil diselesaikan. Selamat menikmati!"
+  );
+  navigate("/");
+  return;
+}
 
       // Nutrisi AI adalah total seluruh resep. Yang dicatat adalah 1 porsi.
       const totalPorsi = Math.max(
@@ -922,7 +923,7 @@ export default function RacikResepAI() {
 
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-green-600 to-emerald-500 text-white shadow-md shadow-green-900/20">
-              <ChefHat size={19} />
+              <CookingPot size={19} />
             </div>
             <span className="truncate text-sm font-extrabold tracking-tight text-green-950 sm:text-base">
               Racik Resep AI
@@ -1829,7 +1830,7 @@ export default function RacikResepAI() {
                   ) : resepSudahDisimpan ? (
                     <CheckCircle2 size={17} />
                   ) : (
-                    <Bookmark size={17} />
+                    <BookOpen size={17} />
                   )}
 
                   {sedangMenyimpan

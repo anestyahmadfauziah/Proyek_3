@@ -18,10 +18,13 @@ import {
   Lightbulb,
   ChefHat,
   Clock,
-  ArrowRight,
   Bookmark,
   Utensils,
+  CookingPot,
+  BookOpen,
+  ShoppingBasket,
   X,
+  
 } from "lucide-react";
 
 import logoDapurCerdas from "../assets/logo-dapur-cerdas.png";
@@ -35,6 +38,7 @@ const menu = [
   { label: "Stok Kulkas", icon: Package, path: "/stok" },
   { label: "Nutrisi", icon: TrendingUp, path: "/nutrisi" },
   { label: "Si Kecil", icon: Baby, path: "/si-kecil" },
+  
 ];
 
 /* =========================================================
@@ -292,6 +296,44 @@ const pedomanMenu = [
       "Dampingi anak selama makan dan terapkan jadwal makan yang teratur.",
     ],
   },
+  {
+    id: "umum",
+    judul: "Umum",
+    deskripsi: "Menu rumahan seimbang untuk dinikmati seluruh keluarga.",
+    label: "Menu sehat keluarga",
+    warna: "from-emerald-50 to-green-50",
+    aksen: "bg-emerald-100 text-emerald-700",
+    gambar:
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=85",
+    pengantar:
+      "Pilih menu beragam yang memadukan sumber karbohidrat, protein, sayur, dan buah. Sesuaikan porsi serta kebutuhan setiap anggota keluarga.",
+    menu: [
+      {
+        waktu: "Sarapan",
+        nama: "Nasi, telur dadar sayur, dan buah",
+        bahan: "Nasi, telur, wortel, bayam, dan pepaya.",
+        manfaat: "Kombinasi energi, protein, serat, dan vitamin.",
+      },
+      {
+        waktu: "Makan siang",
+        nama: "Nasi, ayam panggang, dan capcay",
+        bahan: "Nasi, ayam matang, wortel, brokoli, dan kembang kol.",
+        manfaat: "Sumber protein dengan variasi sayuran.",
+      },
+      {
+        waktu: "Makan malam",
+        nama: "Sup tahu ikan dan kentang",
+        bahan: "Tahu, ikan matang tanpa duri, kentang, wortel, dan sayuran.",
+        manfaat: "Mengombinasikan protein, karbohidrat, dan sayuran.",
+      },
+    ],
+    tips: [
+      "Usahakan variasi bahan pangan dan warna sayuran setiap hari.",
+      "Pilih cara memasak seperti kukus, rebus, panggang, atau tumis secukupnya.",
+      "Sesuaikan porsi dengan usia, aktivitas, dan kebutuhan masing-masing anggota keluarga.",
+      "Perhatikan alergi dan kebutuhan khusus setiap anggota keluarga.",
+    ],
+  },
 ];
 
 /* =========================================================
@@ -411,6 +453,43 @@ const menuHarian = {
       ["Sarapan", "Bubur nasi ikan dan wortel", "Nasi, ikan matang tanpa duri, dan wortel.", "Protein hewani dan sayuran."],
       ["Makan siang", "Nasi, telur matang, dan sup ayam", "Nasi, telur matang, ayam, dan sayuran.", "Protein dan energi."],
       ["Makan malam", "Nasi lembek, tempe, dan sayur bening", "Nasi, tempe matang, bayam, dan jagung.", "Protein nabati dan serat."],
+    ],
+  ],
+  umum: [
+    [
+      ["Sarapan", "Nasi, telur dadar sayur, dan pepaya", "Nasi, telur matang, wortel, bayam, dan pepaya.", "Energi, protein, serat, dan vitamin."],
+      ["Makan siang", "Nasi, ayam panggang, dan capcay", "Nasi, ayam matang, wortel, brokoli, dan kembang kol.", "Protein dan variasi sayuran."],
+      ["Makan malam", "Sup tahu ikan dan kentang", "Tahu, ikan matang tanpa duri, kentang, dan wortel.", "Protein, karbohidrat, dan sayuran."],
+    ],
+    [
+      ["Sarapan", "Oat, susu, dan pisang", "Oat, susu, dan pisang matang.", "Serat, energi, dan kalsium."],
+      ["Makan siang", "Nasi, ikan kembung, dan tumis kangkung", "Nasi, ikan matang, kangkung, dan tahu.", "Protein dan variasi sayuran."],
+      ["Makan malam", "Ayam kecap dan tumis buncis", "Ayam matang, buncis, wortel, dan nasi.", "Protein dan serat."],
+    ],
+    [
+      ["Sarapan", "Roti gandum, telur, dan alpukat", "Roti gandum, telur matang, dan alpukat.", "Karbohidrat, protein, dan lemak tak jenuh."],
+      ["Makan siang", "Nasi, tempe, dan sayur bening", "Nasi, tempe matang, bayam, dan jagung.", "Protein nabati dan serat."],
+      ["Makan malam", "Sup ayam makaroni", "Ayam matang, makaroni, wortel, dan buncis.", "Energi, protein, dan sayuran."],
+    ],
+    [
+      ["Sarapan", "Ubi kukus dan telur matang", "Ubi dan telur matang.", "Energi dan protein."],
+      ["Makan siang", "Nasi, pepes ikan, dan tumis sayur", "Nasi, ikan matang, wortel, dan buncis.", "Protein dan sayuran."],
+      ["Makan malam", "Capcay tahu dan nasi", "Tahu, brokoli, wortel, sawi, dan nasi.", "Protein nabati dan serat."],
+    ],
+    [
+      ["Sarapan", "Bubur kacang hijau dan buah", "Kacang hijau matang dan potongan buah.", "Energi dan protein nabati."],
+      ["Makan siang", "Nasi, ayam semur, dan sayur", "Nasi, ayam matang, kentang, dan wortel.", "Protein dan karbohidrat."],
+      ["Makan malam", "Telur kukus, tumis brokoli, dan nasi", "Telur matang, brokoli, dan nasi.", "Protein dan serat."],
+    ],
+    [
+      ["Sarapan", "Pancake pisang dan susu", "Pisang, telur matang, tepung, dan susu.", "Energi dan protein."],
+      ["Makan siang", "Nasi, ikan kuah kuning, dan sayur", "Nasi, ikan matang, labu siam, dan wortel.", "Protein dan sayuran."],
+      ["Makan malam", "Tumis tahu tempe dan sup sayur", "Tahu, tempe matang, wortel, kentang, dan bayam.", "Protein nabati dan serat."],
+    ],
+    [
+      ["Sarapan", "Nasi goreng sayur dan telur", "Nasi, telur matang, wortel, dan sawi.", "Energi dan protein."],
+      ["Makan siang", "Ayam panggang, nasi, dan lalap matang", "Ayam matang, nasi, dan sayuran matang.", "Protein dan variasi sayuran."],
+      ["Makan malam", "Sup ikan tahu dan nasi", "Ikan matang tanpa duri, tahu, wortel, dan nasi.", "Protein dan cairan dari sup."],
     ],
   ],
 };
@@ -1112,10 +1191,6 @@ function Dashboard() {
             >
               <Sparkles size={16} />
               Buat Resep AI
-              <ArrowRight
-                size={16}
-                className="transition group-hover:translate-x-1"
-              />
             </button>
           </div>
 
@@ -1131,14 +1206,14 @@ function Dashboard() {
         <section className="mt-6 overflow-hidden rounded-3xl border border-[#f1e2cf] bg-gradient-to-br from-[#fffaf1] via-[#fff6e9] to-[#fff1df] p-4 shadow-[0_8px_28px_rgba(160,105,45,0.08)] sm:mt-7 sm:p-6">
           <div className="mb-4 flex items-start gap-3 sm:mb-5">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#23652d] to-[#39964b] text-white shadow-md">
-              <Utensils size={19} />
+              <CookingPot size={19} />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-extrabold tracking-tight text-[#202833] sm:text-lg">
-                Menu Makanan Hari Ini
+                Menu Sehat Keluarga
               </h2>
               <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-sm">
-                {getTanggalMenuHariIni()} · Menu berganti otomatis setiap hari.
+                {getTanggalMenuHariIni()} · Pilih kategori sesuai kebutuhan keluarga.
               </p>
             </div>
             <span className="hidden rounded-full bg-white/80 px-3 py-1 text-[10px] font-bold text-[#9a6a27] sm:inline-flex">
@@ -1146,7 +1221,7 @@ function Dashboard() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
             {pedomanMenu.map((pedoman) => (
               <article
                 key={pedoman.id}
@@ -1177,15 +1252,14 @@ function Dashboard() {
                     onClick={() => setPedomanTerpilih({ ...pedoman, menuHariIni: getMenuHariIni(pedoman.id) })}
                     className="group/link mt-3 inline-flex items-center gap-1.5 text-xs font-extrabold text-[#23652d] transition hover:text-[#174b22]"
                   >
-                    Lihat Menu Hari Ini
-                    <ArrowRight size={14} className="transition group-hover/link:translate-x-1" />
+                    Lihat Menu
                   </button>
                 </div>
               </article>
             ))}
           </div>
           <p className="mt-4 text-[10px] leading-relaxed text-slate-500 sm:text-[11px]">
-            Catatan: Menu berganti otomatis setiap hari mengikuti tanggal perangkat dan berulang dalam siklus 7 hari. Sesuaikan porsi, tekstur, alergi, serta kondisi kesehatan dengan anjuran tenaga kesehatan.
+            Catatan: Rekomendasi menu harian berganti mengikuti tanggal perangkat dalam siklus 7 hari. Sesuaikan porsi, tekstur, alergi, serta kondisi kesehatan dengan anjuran tenaga kesehatan.
           </p>
         </section>
 
@@ -1288,7 +1362,7 @@ function Dashboard() {
           <div className="mb-5 flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1f6b2b] to-[#2f9e4f] text-white shadow-md shadow-green-900/20">
-                <Bookmark size={20} />
+                <BookOpen size={20} />
               </div>
 
               <div className="min-w-0">
@@ -1428,10 +1502,6 @@ function Dashboard() {
                   </div>
 
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 transition group-hover:bg-[#23652d] group-hover:text-white">
-                    <ArrowRight
-                      size={17}
-                      className="transition group-hover:translate-x-0.5"
-                    />
                   </div>
                 </button>
               ))}
@@ -1447,7 +1517,7 @@ function Dashboard() {
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#d9f6df] to-[#b9ecc4] text-[#1f7a35] shadow-sm">
-                <Refrigerator size={20} />
+                <ShoppingBasket size={20} />
               </div>
 
               <h2 className="truncate text-base font-extrabold tracking-tight sm:text-lg">

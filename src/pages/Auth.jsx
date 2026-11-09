@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { supabase } from "../lib/supabaseClient";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -112,11 +113,21 @@ function Auth() {
   const [authLoading, setAuthLoading] = useState(false);
 
   /* =======================================================
+     CLOUDFLARE TURNSTILE CAPTCHA
+  ======================================================= */
+
+  const [captchaToken, setCaptchaToken] = useState("");
+  const captchaRef = useRef(null);
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  /* =======================================================
      GANTI MODE
   ======================================================= */
 
   const changeMode = (newMode) => {
     setMode(newMode);
+    setCaptchaToken("");
+    captchaRef.current?.reset();
 
     if (newMode === "login") {
       navigate("/login");
@@ -168,10 +179,22 @@ function Auth() {
       return;
     }
 
+    if (!captchaToken) {
+      alert("Silakan selesaikan verifikasi CAPTCHA terlebih dahulu.");
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email: loginForm.email,
       password: loginForm.password,
+      options: {
+        captchaToken,
+      },
     });
+
+    // Token Turnstile hanya boleh digunakan sekali.
+    captchaRef.current?.reset();
+    setCaptchaToken("");
 
     if (error) {
       console.error("Login Error:", error);
@@ -212,6 +235,11 @@ const handleRegisterSubmit = async (e) => {
     return;
   }
 
+  if (!captchaToken) {
+    alert("Silakan selesaikan verifikasi CAPTCHA terlebih dahulu.");
+    return;
+  }
+
   try {
     const { data, error } = await supabase.auth.signUp({
       email: registerForm.email,
@@ -222,8 +250,13 @@ const handleRegisterSubmit = async (e) => {
           nama: registerForm.nama,
         },
         emailRedirectTo: `${window.location.origin}/dashboard`,
+        captchaToken,
       },
     });
+
+    // Token Turnstile hanya boleh digunakan sekali.
+    captchaRef.current?.reset();
+    setCaptchaToken("");
 
     if (error) {
       console.error("Register Error:", error);
@@ -287,94 +320,155 @@ const handleRegisterSubmit = async (e) => {
     );
   };
 
-  /* =======================================================
-     LUPA PASSWORD - VERIFIKASI OTP
-  ======================================================= */
+  /* =========================================================
+   CEK JENIS AKUN
+========================================================= */
 
-  const handleVerifyOtpSubmit = async (e) => {
-    e.preventDefault();
+const isGoogleOnlyAccount = (user) => {
+  const providers = user?.app_metadata?.providers || [];
 
-    if (!forgotEmail || !/^\d{6}$/.test(otp.trim())) {
-      alert("Masukkan kode OTP 6 digit yang dikirim ke email.");
-      return;
-    }
+  return (
+    providers.includes("google") &&
+    !providers.includes("email")
+  );
+};
 
-    setAuthLoading(true);
+ /* =========================================================
+   LUPA PASSWORD - VERIFIKASI OTP
+========================================================= */
 
-    const { error } = await supabase.auth.verifyOtp({
-      email: forgotEmail,
-      token: otp.trim(),
-      type: "recovery",
-    });
+const handleVerifyOtpSubmit = async (e) => {
+  e.preventDefault();
 
+  if (!forgotEmail || !/^\d{6}$/.test(otp.trim())) {
+    alert("Masukkan kode OTP 6 digit yang dikirim ke email.");
+    return;
+  }
+
+  setAuthLoading(true);
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: forgotEmail,
+    token: otp.trim(),
+    type: "recovery",
+  });
+
+  setAuthLoading(false);
+
+  if (error) {
+    console.error("Verify OTP Error:", error);
+
+    alert(
+      "Kode OTP tidak valid atau sudah kedaluwarsa. Silakan coba lagi."
+    );
+
+    return;
+  }
+
+  // CEK JENIS AKUN
+  if (isGoogleOnlyAccount(data.user)) {
+    await supabase.auth.signOut();
+
+    setOtp("");
+    setMode("login");
+    navigate("/login");
+
+    alert(
+      "Akun ini terdaftar menggunakan Google. Kata sandi tidak dapat diubah melalui fitur ini. Silakan masuk menggunakan akun Google."
+    );
+
+    return;
+  }
+
+  // Jika akun menggunakan email dan password
+  setNewPassword("");
+  setConfirmNewPassword("");
+  setMode("resetPassword");
+};
+
+  /* =========================================================
+   LUPA PASSWORD - SIMPAN PASSWORD BARU
+========================================================= */
+
+const handleUpdatePasswordSubmit = async (e) => {
+  e.preventDefault();
+
+  if (newPassword.length < 8) {
+    alert("Kata sandi baru minimal 8 karakter.");
+    return;
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    alert("Konfirmasi kata sandi baru tidak sama.");
+    return;
+  }
+
+  setAuthLoading(true);
+
+  // Ambil informasi pengguna yang sedang terverifikasi
+  const { data: userData, error: userError } =
+    await supabase.auth.getUser();
+
+  if (userError || !userData.user) {
     setAuthLoading(false);
 
-    if (error) {
-      console.error("Verify OTP Error:", error);
-      alert("Kode OTP tidak valid atau sudah kedaluwarsa. Silakan coba lagi.");
-      return;
-    }
+    alert("Sesi verifikasi tidak ditemukan. Silakan ulangi proses lupa kata sandi.");
 
-    setNewPassword("");
-    setConfirmNewPassword("");
-    setMode("resetPassword");
-  };
+    return;
+  }
 
-  /* =======================================================
-     LUPA PASSWORD - SIMPAN PASSWORD BARU
-  ======================================================= */
-
-  const handleUpdatePasswordSubmit = async (e) => {
-    e.preventDefault();
-
-    if (newPassword.length < 8) {
-      alert("Kata sandi baru minimal 8 karakter.");
-      return;
-    }
-
-    if (newPassword !== confirmNewPassword) {
-      alert("Konfirmasi kata sandi baru tidak sama.");
-      return;
-    }
-
-    setAuthLoading(true);
-
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
-
-    if (error) {
-      setAuthLoading(false);
-      console.error("Update Password Error:", error);
-      alert(error.message);
-      return;
-    }
-
-    // Keluar setelah password berhasil diubah agar pengguna login kembali.
+  // CEK JENIS AKUN
+  if (isGoogleOnlyAccount(userData.user)) {
     await supabase.auth.signOut();
 
     setAuthLoading(false);
-    setLoginForm({
-      email: forgotEmail,
-      password: "",
-    });
-    setForgotEmail("");
-    setOtp("");
-    setNewPassword("");
-    setConfirmNewPassword("");
     setMode("login");
     navigate("/login");
 
-    alert("Kata sandi berhasil diperbarui. Silakan masuk menggunakan kata sandi baru.");
-  };
+    alert(
+      "Akun Google tidak dapat mengubah kata sandi melalui fitur ini."
+    );
 
-  const backToLogin = () => {
-    setMode("login");
-    setOtp("");
-    setNewPassword("");
-    setConfirmNewPassword("");
-    navigate("/login");
-  };
+    return;
+  }
+
+  // UPDATE PASSWORD
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) {
+    setAuthLoading(false);
+
+    console.error("Update Password Error:", error);
+
+    alert(error.message);
+
+    return;
+  }
+
+  // Keluar setelah password berhasil diubah
+  await supabase.auth.signOut();
+
+  setAuthLoading(false);
+
+  setLoginForm({
+    email: forgotEmail,
+    password: "",
+  });
+
+  setForgotEmail("");
+  setOtp("");
+  setNewPassword("");
+  setConfirmNewPassword("");
+
+  setMode("login");
+  navigate("/login");
+
+  alert(
+    "Kata sandi berhasil diperbarui. Silakan masuk menggunakan kata sandi baru."
+  );
+};
 
   /* =======================================================
      GOOGLE LOGIN
@@ -754,6 +848,24 @@ const handleRegisterSubmit = async (e) => {
                     >
                       Lupa kata sandi?
                     </button>
+                  </div>
+
+                  {/* CLOUDFLARE TURNSTILE CAPTCHA */}
+
+                  <div className="flex justify-center pt-1">
+                    {turnstileSiteKey ? (
+                      <Turnstile
+                        ref={captchaRef}
+                        siteKey={turnstileSiteKey}
+                        onSuccess={(token) => setCaptchaToken(token)}
+                        onExpire={() => setCaptchaToken("")}
+                        onError={() => setCaptchaToken("")}
+                      />
+                    ) : (
+                      <p className="text-xs text-red-600">
+                        Konfigurasi CAPTCHA belum tersedia.
+                      </p>
+                    )}
                   </div>
 
                   {/* LOGIN BUTTON */}
@@ -1223,6 +1335,24 @@ const handleRegisterSubmit = async (e) => {
                         )}
                       </button>
                     </div>
+                  </div>
+
+                  {/* CLOUDFLARE TURNSTILE CAPTCHA */}
+
+                  <div className="flex justify-center pt-1">
+                    {turnstileSiteKey ? (
+                      <Turnstile
+                        ref={captchaRef}
+                        siteKey={turnstileSiteKey}
+                        onSuccess={(token) => setCaptchaToken(token)}
+                        onExpire={() => setCaptchaToken("")}
+                        onError={() => setCaptchaToken("")}
+                      />
+                    ) : (
+                      <p className="text-xs text-red-600">
+                        Konfigurasi CAPTCHA belum tersedia.
+                      </p>
+                    )}
                   </div>
 
                   {/* REGISTER BUTTON */}

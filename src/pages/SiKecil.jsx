@@ -132,33 +132,352 @@ function usiaAnak(tanggal) {
   return `${bulan} bulan`;
 }
 
-function KartuAnalisisWHO({ hasil, loading, error, record }) {
-  if (loading) return <p className="mt-3 text-xs text-slate-500">Menghitung standar pertumbuhan WHO...</p>;
-  if (error) return <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Analisis WHO belum tersedia: {error}. Pastikan endpoint backend /api/pertumbuhan/analisis sudah dibuat.</p>;
-  if (!hasil) return <p className="mt-3 text-xs text-slate-500">Belum ada hasil analisis WHO.</p>;
+function KartuAnalisisWHO({ hasil, loading, error }) {
+  if (loading) {
+    return (
+      <p className="mt-3 text-xs text-slate-500">
+        Menghitung standar pertumbuhan WHO...
+      </p>
+    );
+  }
+
+  if (error) {
+    return (
+      <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">
+        Analisis WHO belum tersedia: {error}.
+      </p>
+    );
+  }
+
+  if (!hasil) {
+    return (
+      <p className="mt-3 text-xs text-slate-500">
+        Belum ada hasil analisis WHO.
+      </p>
+    );
+  }
 
   const indikator = [
-    ["BB/U", hasil.bbu], ["PB/U atau TB/U", hasil.pbu_tbu],
-    ["BB/PB atau BB/TB", hasil.bb_pb_tb], ["LK/U", hasil.lku],
+    {
+      nama: "BB/U",
+      data: hasil.bbu,
+      keterangan: "Berat badan sesuai dengan usia anak.",
+      keteranganPeringatan: "Berat badan perlu diperhatikan untuk usia anak.",
+    },
+    {
+      nama: "TB/U",
+      data: hasil.pbu_tbu,
+      keterangan: "Tinggi badan sesuai dengan usia anak.",
+      keteranganPeringatan: "Tinggi badan perlu diperhatikan untuk usia anak.",
+    },
   ];
+
   return (
-    <div className="mt-3 rounded-2xl border border-[#dcebe0] bg-[#f7fbf7] p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-sm font-bold text-[#0f3d1e]">Analisis Pertumbuhan WHO</h4>
-        <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-slate-600">Usia {hasil.usia_hari ?? "—"} hari</span>
-      </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        {indikator.map(([nama, item]) => item && (
-          <div key={nama} className="rounded-xl border border-[#e5eee7] bg-white p-3">
-            <p className="text-xs font-semibold text-slate-500">{nama}</p>
-            <p className="mt-1 text-sm font-bold text-[#193d24]">{item.kategori || "Belum dapat dinilai"}</p>
-            <p className="mt-1 text-xs text-slate-500">Z-score: {item.z_score == null ? "—" : `${Number(item.z_score).toFixed(2)} SD`}</p>
+    <div className="mt-3 space-y-2">
+      {indikator.map(({ nama, data, keterangan, keteranganPeringatan }) => {
+        if (!data) return null;
+
+        const kategori = String(data.kategori || "").toLowerCase();
+        const normal = kategori.includes("normal");
+
+        return (
+          <div
+            key={nama}
+            className={`rounded-xl border p-3 ${
+              normal
+                ? "border-[#a7f3c0] bg-[#dcfce7]"
+                : "border-[#ffdf75] bg-[#fef3c7]"
+            }`}
+          >
+            <div
+              className={`flex items-center gap-2 text-sm font-bold ${
+                normal ? "text-[#15803d]" : "text-[#d97706]"
+              }`}
+            >
+              {normal ? (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-current">
+                  ✓
+                </span>
+              ) : (
+                <span className="text-sm">⚠</span>
+              )}
+
+              <span>
+                {nama}: {data.kategori || "Belum dapat dinilai"}
+              </span>
+            </div>
+
+            <p className="mt-1 text-xs leading-5 text-[#647b68]">
+              {normal ? keterangan : keteranganPeringatan}
+            </p>
           </div>
-        ))}
-      </div>
-      {hasil.kesimpulan && <p className="mt-3 text-sm leading-6 text-[#294b32]">{hasil.kesimpulan}</p>}
-      <p className="mt-2 text-[11px] leading-5 text-slate-500">Hasil merupakan skrining pertumbuhan berdasarkan standar WHO, bukan diagnosis. Konfirmasi dengan tenaga kesehatan.</p>
+        );
+      })}
     </div>
+  );
+}
+
+function KurvaPertumbuhanWHO({ records, hasilAnalisis, child }) {
+  const [indikator, setIndikator] = useState("bbu");
+
+  const konfigurasi = {
+    bbu: {
+      label: "Berat badan menurut umur",
+      nama: "BB/U",
+    },
+    pbu_tbu: {
+      label: "Panjang/tinggi badan menurut umur",
+      nama: "PB/U atau TB/U",
+    },
+  };
+
+  const data = records
+    .map((record) => {
+      const usiaHari = hitungHari(child?.tanggal_lahir, record.tanggal_pengukuran);
+      const usiaBulan = usiaHari == null ? null : usiaHari / 30.4375;
+      const analisis = hasilAnalisis[record.id]?.data;
+      const indikatorData = analisis?.[indikator];
+      const zScore = indikatorData?.z_score;
+
+      return {
+        id: record.id,
+        usiaBulan,
+        zScore: zScore == null ? null : Number(zScore),
+        tanggal: record.tanggal_pengukuran,
+      };
+    })
+    .filter(
+      (item) =>
+        item.usiaBulan != null &&
+        item.usiaBulan >= 0 &&
+        item.usiaBulan <= 36 &&
+        Number.isFinite(item.zScore)
+    )
+    .sort((a, b) => a.usiaBulan - b.usiaBulan);
+
+  const width = 720;
+  const height = 310;
+  const left = 58;
+  const right = 12;
+  const top = 18;
+  const bottom = 58;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const minZ = -3.5;
+  const maxZ = 3;
+
+  const x = (month) => left + (month / 36) * plotWidth;
+  const y = (z) => top + ((maxZ - z) / (maxZ - minZ)) * plotHeight;
+  const ticksY = [-3, -2, -1, 0, 1, 2, 3];
+  const ticksX = [6, 12, 18, 24, 30, 36];
+  const garisAnak = data
+    .map((item) => `${x(item.usiaBulan)},${y(item.zScore)}`)
+    .join(" ");
+
+  return (
+    <section className="mt-5 rounded-[22px] border border-[#d5e5d9] bg-white p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h4 className="text-lg font-bold text-[#193d24]">Kurva pertumbuhan WHO</h4>
+          <p className="mt-1 text-xs text-slate-500">
+            {konfigurasi[indikator].label}
+          </p>
+        </div>
+        <div className="flex rounded-full border border-[#d5e5d9] bg-[#f7faf7] p-1">
+          {Object.entries(konfigurasi).map(([key, item]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setIndikator(key)}
+              aria-pressed={indikator === key}
+              className={`rounded-full px-4 py-2 text-xs font-bold transition ${
+                indikator === key
+                  ? "bg-[#0f3d1e] text-white shadow-sm"
+                  : "text-[#53675a] hover:bg-white"
+              }`}
+            >
+              {item.nama}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 w-full overflow-hidden">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label={`Kurva ${konfigurasi[indikator].nama} berdasarkan Z-score WHO`}
+          className="h-auto w-full"
+        >
+          {ticksY.map((tick) => (
+            <g key={tick}>
+              <line
+                x1={left}
+                x2={width - right}
+                y1={y(tick)}
+                y2={y(tick)}
+                stroke="#e8eee9"
+                strokeWidth="1"
+              />
+              <text
+                x={left - 12}
+                y={y(tick) + 4}
+                textAnchor="end"
+                fontSize="12"
+                fill="#7a8580"
+              >
+                {tick}
+              </text>
+            </g>
+          ))}
+
+          {ticksX.map((tick) => (
+            <g key={tick}>
+              <line
+                x1={x(tick)}
+                x2={x(tick)}
+                y1={top}
+                y2={height - bottom}
+                stroke="#b9c5bd"
+                strokeDasharray="5 6"
+                strokeWidth="1"
+              />
+              <text
+                x={x(tick)}
+                y={height - bottom + 22}
+                textAnchor="middle"
+                fontSize="12"
+                fill="#7a8580"
+              >
+                {tick} bln
+              </text>
+            </g>
+          ))}
+
+          <line
+            x1={left}
+            x2={width - right}
+            y1={y(0)}
+            y2={y(0)}
+            stroke="#ed9b13"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <line
+            x1={left}
+            x2={width - right}
+            y1={y(-2)}
+            y2={y(-2)}
+            stroke="#c34b4b"
+            strokeWidth="2.5"
+            strokeDasharray="9 7"
+          />
+
+          {data.length > 1 && (
+            <polyline
+              points={garisAnak}
+              fill="none"
+              stroke="#0f3d1e"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+
+          {data.map((item, index) => {
+            const isLatest = index === data.length - 1;
+            const markerX = x(item.usiaBulan);
+            const markerY = y(item.zScore);
+
+            return (
+              <g key={item.id}>
+                {isLatest ? (
+                  <g transform={`translate(${markerX - 13}, ${markerY - 29})`}>
+                    {/* Latar putih membuat ikon anak tetap terbaca di atas garis grafik. */}
+                    <circle cx="13" cy="15" r="15" fill="white" stroke="#0f3d1e" strokeWidth="1.5" />
+                    {/* Ikon anak sederhana: kepala, telinga, badan, tangan, dan kaki. */}
+                    <circle cx="13" cy="8" r="4.2" fill="#0f3d1e" />
+                    <path
+                      d="M7.5 21.5c.2-4.2 2.2-6.8 5.5-6.8s5.3 2.6 5.5 6.8M8.5 17.5l-3 3M17.5 17.5l3 3M10.5 21.5l-1.2 3M15.5 21.5l1.2 3"
+                      fill="none"
+                      stroke="#0f3d1e"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <title>
+                      Pengukuran terbaru · {formatTanggal(item.tanggal)} · Z-score {item.zScore.toFixed(2)} SD
+                    </title>
+                  </g>
+                ) : (
+                  <circle
+                    cx={markerX}
+                    cy={markerY}
+                    r="6"
+                    fill="#0f3d1e"
+                    stroke="white"
+                    strokeWidth="2.5"
+                  >
+                    <title>
+                      {formatTanggal(item.tanggal)} · Z-score {item.zScore.toFixed(2)} SD
+                    </title>
+                  </circle>
+                )}
+              </g>
+            );
+          })}
+
+          <text
+            x={left}
+            y={height - 10}
+            fontSize="11"
+            fill="#7a8580"
+          >
+            Usia anak
+          </text>
+          <text
+            x="15"
+            y={top + plotHeight / 2}
+            fontSize="11"
+            fill="#7a8580"
+            textAnchor="middle"
+            transform={`rotate(-90 15 ${top + plotHeight / 2})`}
+          >
+            Z-score (SD)
+          </text>
+        </svg>
+      </div>
+
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-600">
+        <span className="inline-flex items-center gap-2">
+          <svg viewBox="0 0 26 30" className="h-5 w-5" aria-hidden="true">
+            <circle cx="13" cy="8" r="4" fill="#0f3d1e" />
+            <path d="M7.5 23c.2-4.2 2.2-6.8 5.5-6.8s5.3 2.6 5.5 6.8M8.5 19l-3 3m12-3 3 3m-10 1-1.2 3m5.2-3 1.2 3" fill="none" stroke="#0f3d1e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {child?.nama || "Anak"}
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="h-[3px] w-5 rounded bg-[#ed9b13]" />
+          Median WHO (0 SD)
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="w-5 border-t-2 border-dashed border-[#c34b4b]" />
+          −2 SD
+        </span>
+      </div>
+
+      {data.length === 0 ? (
+        <p className="mt-4 rounded-xl bg-[#f5f9f5] p-3 text-xs leading-5 text-slate-500">
+          Titik kurva akan muncul setelah analisis WHO {konfigurasi[indikator].nama} tersedia untuk pengukuran anak.
+        </p>
+      ) : (
+        <p className="mt-4 text-xs leading-5 text-slate-500">
+          Ikon anak menunjukkan pengukuran terbaru, sedangkan titik hijau kecil
+          menunjukkan pengukuran sebelumnya. Garis median dan −2 SD menunjukkan
+          batas Z-score WHO. Grafik memakai hasil analisis backend.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -943,88 +1262,132 @@ export default function SiKecil() {
                 </>
               )}
 
-              {selectedChild && (
-                <div className="mt-6">
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <div>
-                      <h3 className="font-sans text-xl font-semibold tracking-tight text-[#0f3d1e]">Riwayat Pertumbuhan</h3>
-                      <p className="text-sm text-slate-500">
-                        {pengukuran.length} catatan pengukuran
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setFormGrowth({ ...initialGrowth, tanggal_pengukuran: today() });
-                        setModalGrowth(true);
-                      }}
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm bg-[#0f3d1e] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(15,61,30,0.8)] transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
-                    >
-                      <Plus size={17} /> Catat Pengukuran
-                    </button>
-                  </div>
+              
+{selectedChild && (
+  <div className="mt-6">
+    {/* Judul riwayat */}
+    <div className="mb-4">
+      <h3 className="font-sans text-xl font-semibold tracking-tight text-[#0f3d1e]">
+        Riwayat Pertumbuhan
+      </h3>
+      <p className="text-sm text-slate-500">
+        {pengukuran.length} catatan pengukuran
+      </p>
+    </div>
 
-                  {pengukuran.length === 0 ? (
-                    <p className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] text-sm text-slate-500 p-6">
-                      Belum ada pengukuran tersimpan.
-                    </p>
-                  ) : (
-                    <div className="mt-4 overflow-x-auto">
-                      <table className="w-full min-w-[570px] text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-[#e8efe9] bg-[#f3f8f4] text-slate-500">
-                            <th className="px-4 py-3.5 text-xs font-semibold">Tanggal</th>
-                            <th className="px-4 py-3.5 text-xs font-semibold">Berat</th>
-                            <th className="px-4 py-3.5 text-xs font-semibold">Panjang/tinggi</th>
-                            <th className="px-4 py-3.5 text-xs font-semibold">Lingkar kepala</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pengukuran.map((r) => (
-                            <tr key={r.id} className="border-b border-[#e8efe9] transition-colors last:border-b-0 hover:bg-[#f6faf7]">
-                              <td className="px-4 py-3.5 tabular-nums">{formatTanggal(r.tanggal_pengukuran)}</td>
-                              <td className="px-4 py-3.5 tabular-nums">{r.berat_kg != null ? `${r.berat_kg} kg` : "—"}</td>
-                              <td className="px-4 py-3.5 tabular-nums">{r.panjang_tinggi_cm != null ? `${r.panjang_tinggi_cm} cm` : "—"}</td>
-                              <td className="px-4 py-3.5 tabular-nums">{r.lingkar_kepala_cm != null ? `${r.lingkar_kepala_cm} cm` : "—"}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div className="mt-4 space-y-3">
-                        {pengukuran.map((r) => (
-                          <div key={`analisis-${r.id}`} className="rounded-2xl border border-[#e8efe9] bg-white p-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-xs font-bold text-[#294b32]">Analisis pengukuran · {formatTanggal(r.tanggal_pengukuran)}</p>
-                              <span className="text-[11px] text-slate-500">{selectedChild.nama}</span>
-                            </div>
-                            <KartuAnalisisWHO
-                              hasil={hasilAnalisis[r.id]?.data}
-                              error={hasilAnalisis[r.id]?.error}
-                              loading={!hasilAnalisis[r.id]}
-                              record={r}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] text-sm text-slate-500 p-6">
-              Belum ada profil anak. Setelah bayi lahir, pilih kehamilan lalu
-              tekan “Catat Kelahiran”.
-            </p>
-          )}
-        </section>
+    {/* Grafik WHO tetap dipertahankan */}
+    {pengukuran.length > 0 && (
+      <KurvaPertumbuhanWHO
+        records={pengukuran}
+        hasilAnalisis={hasilAnalisis}
+        child={selectedChild}
+      />
+    )}
 
-        <p className="mt-5 text-xs leading-5 text-slate-500">
-          Informasi usia kehamilan dan hitungan 1000 HPK merupakan panduan
-          kalender. Gunakan tanggal dan penilaian tenaga kesehatan untuk
-          pemantauan medis. Catatan pertumbuhan tidak otomatis menentukan
-          status gizi.
-        </p>
-      </main>
+    {/* Daftar riwayat pengukuran */}
+    {pengukuran.length === 0 ? (
+      <p className="mt-4 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] p-6 text-sm text-slate-500">
+        Belum ada pengukuran tersimpan.
+      </p>
+    ) : (
+      <div className="mt-4 space-y-4">
+        {[...pengukuran]
+          .sort(
+            (a, b) =>
+              new Date(b.tanggal_pengukuran) -
+              new Date(a.tanggal_pengukuran)
+          )
+          .map((r) => (
+            <div key={r.id}>
+              {/* Tanggal dan ringkasan pengukuran */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-bold text-[#294b32]">
+                  {formatTanggal(r.tanggal_pengukuran)}
+                </p>
+
+                <p className="text-xs text-[#647b68]">
+                  BB {r.berat_kg != null ? `${r.berat_kg} kg` : "—"}
+                  {" · "}
+                  TB {r.panjang_tinggi_cm != null
+                    ? `${r.panjang_tinggi_cm} cm`
+                    : "—"}
+                  {" · "}
+                  LK {r.lingkar_kepala_cm != null
+                    ? `${r.lingkar_kepala_cm} cm`
+                    : "—"}
+                </p>
+              </div>
+
+              {/* Hasil analisis WHO */}
+              <div className="mt-2">
+                <KartuAnalisisWHO
+                  hasil={hasilAnalisis[r.id]?.data}
+                  error={hasilAnalisis[r.id]?.error}
+                  loading={!hasilAnalisis[r.id]}
+                  record={r}
+                />
+              </div>
+            </div>
+          ))}
+      </div>
+    )}
+
+    {/* Panduan MPASI */}
+    <div className="mt-5 rounded-2xl border border-[#ffdfb0] bg-[#fff7ed] p-4">
+      <div className="flex items-start gap-3">
+        <ClipboardList
+          size={20}
+          className="mt-0.5 shrink-0 text-[#b77900]"
+        />
+
+        <div>
+          <h4 className="text-sm font-bold text-[#a66b00]">
+            Panduan MPASI
+          </h4>
+
+          <p className="mt-2 text-xs leading-5 text-[#647b68]">
+            MPASI dimulai usia 6 bulan sambil melanjutkan ASI
+            sampai 2 tahun. Sertakan sumber protein hewani
+            pada menu harian.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* Tombol catat pengukuran */}
+    <button
+      type="button"
+      onClick={() => {
+        setFormGrowth({
+          ...initialGrowth,
+          tanggal_pengukuran: today(),
+        });
+        setModalGrowth(true);
+      }}
+      className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0f3d1e] px-4 py-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#145427] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2fa356]"
+    >
+      <Plus size={19} />
+      Catat pengukuran baru
+    </button>
+  </div>
+)}
+</>
+) : (
+  <p className="mt-5 rounded-2xl border border-dashed border-[#bcd9c3] bg-[#f4faf5] p-6 text-sm text-slate-500">
+    Belum ada profil anak. Setelah bayi lahir, pilih kehamilan lalu
+    tekan “Catat Kelahiran”.
+  </p>
+)}
+</section>
+
+<p className="mt-5 text-xs leading-5 text-slate-500">
+  Informasi usia kehamilan dan hitungan 1000 HPK merupakan panduan
+  kalender. Gunakan tanggal dan penilaian tenaga kesehatan untuk
+  pemantauan medis. Catatan pertumbuhan tidak otomatis menentukan
+  status gizi.
+</p>
+</main>
+
 
       {modalIbu && (
         <Modal title="Profil Ibu" onClose={() => !saving && setModalIbu(false)}>
